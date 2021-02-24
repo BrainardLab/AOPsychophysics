@@ -44,12 +44,7 @@ switch (sysInfo.localHostName)
         end
 end
 
-%% Set preferences for project output
-%
-% This will need to be locally configured.
-outputBaseDir = fullfile(baseDir,'CNST_materials',theProject);
-stimulusInputBaseDir = fullfile(baseDir,'CNST_materials',theProject,'LightnessCasesForExperiment');
-stimulusDefInputBaseDir = fullfile(projectBaseDir,'stimuli');
+%% Set preferences for project i/o
 
 % This is where the data will be stored
 dataDir = fullfile(baseDir,'AOPY_data',theProject);
