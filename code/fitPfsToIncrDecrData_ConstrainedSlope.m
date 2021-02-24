@@ -1,9 +1,5 @@
-% fitPfsToIncrDecrData_ConstrainedSlope
-%
 % Script to combine data from inc/dec experiments and fit PFs to various
 % axes in the 2D stimulus space
-%
-% 
 
 %% Housekeeping
 clear; close all
