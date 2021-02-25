@@ -5,8 +5,6 @@
 clear; close all
 baseProject = 'AOPsychophysics';
 subProject = 'IncrDecr1';
-dataBaseDir = getpref(baseProject,'dataDir');
-analysisBaseDir = getpref(baseProject,'analysisDir');
 
 %% Load in the data files (update directories to wherever these data live on your machine)
 %
@@ -29,6 +27,8 @@ end
 normFlag = false;
 
 % Set up directories
+dataBaseDir = getpref(baseProject,'dataDir');
+analysisBaseDir = getpref(baseProject,'analysisDir');
 dataDir = fullfile(dataBaseDir,subProject,subj,dataDate,'Separation_1');
 analysisDir = fullfile(analysisBaseDir,subProject,subj,dataDate,'Separation_1');
 if (~exist(analysisDir,'dir'))
@@ -247,5 +247,5 @@ set(ax2, 'Position', [0.4 0.110 0.3347.*.66 0.8150])
 set(ax3, 'Position', [0.7 0.110 0.3347*.66 0.8150])
 
 %% Save fit data to mat file
-save(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.mat', subj)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');
-print(gcf, fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.png', subj)), '-dpng2');
+save(fullfile(analysisDir,sprintf('%s_%d_incDecFits_ConstrainedSlope.mat', subj,normFlag)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');
+print(gcf, fullfile(analysisDir,sprintf('%s_%d_incDecFits_ConstrainedSlope.png', subj,normFlag)), '-dpng2');
