@@ -14,7 +14,10 @@ subProject = 'IncrDecr1';
 %
 % By setting lockAngleAt0 to true, you get ellipses with axes aligned with
 % x and y axis.
-lockAngleAt0 = true;
+lockAngleAt0 = false;
+
+%% Correct for guessing
+correctForGuessing = true;
 
 % If fit gets stuck, try futzing with the value of errorScalar.
 errorScalar = 1000;
@@ -33,7 +36,7 @@ end
 % Select subject
 %   subj = '11043'; % WST
 %   subj = '11046'; % DHB
-subj = '11043';
+subj = '11046';
 switch (subj)
     case {'11043' '11046'}
         dataDate = '20200131';
@@ -48,7 +51,7 @@ analysisBaseDir = getpref(baseProject,'analysisDir');
 analysisDir = fullfile(analysisBaseDir,subProject,subj,dataDate,'Separation_1');
 
 % Read output of psychometric fitting
-theData = load(fullfile(analysisDir,sprintf('%s_%d_incDecFits_ConstrainedSlope.mat',subj,normFlag)));
+theData = load(fullfile(analysisDir,sprintf('%s_%d_%d_incDecFits_ConstrainedSlope.mat',subj,normFlag,correctForGuessing)));
 if isempty(theData)
     error('No fit data found');
 end
@@ -63,6 +66,7 @@ modLevels_PF = nan(size(theData.paramsFitted_Multi,1), length(propSeen_Fit));
 for n = 1:size(theData.paramsFitted_Multi,1)
     modLevels_PF(n,:) = 10.^PF(theData.paramsFitted_Multi(n,:), propSeen_Fit, 'inv');
 end
+
 % Then, convert to x and y coordinates
 xPlot_Fit = cosd(theData.stimAngleList).*modLevels_PF;
 yPlot_Fit = sind(theData.stimAngleList).*modLevels_PF;
@@ -73,8 +77,8 @@ yPlot_Fit = sind(theData.stimAngleList).*modLevels_PF;
 % Otherwise just a regular array. The code should work even with a cell
 % array of length 1, but doing it like this lets us test FitEllipseQ a
 % little more thorougly.
-propsSeen = [0.50 0.70 0.90];
-% propsSeen = 0.70;
+% propsSeen = [0.50 0.70 0.90];
+propsSeen = 0.70;
 if (length(propsSeen) > 1)
     for ii = 1:length(propsSeen)
         whichRow = find(propSeen_Fit == propsSeen(ii));
@@ -104,6 +108,8 @@ else
 end
 
 theLim = 1;
+plot([-theLim theLim],[0 0],'k:','LineWidth',1);
+plot([0 0],[-theLim theLim],'k:','LineWidth',1);
 xlim([-theLim theLim]);
 ylim([-theLim theLim]);
 axis('square');
@@ -152,7 +158,7 @@ if (iscell(ellPoints))
     title(titleStr);
 else
     plot(ellPoints(1,:),ellPoints(2,:),'r','LineWidth',2);
-    title(sprintf('Subject %s, criterion %d%%',subject,round(100*propsSeen)));
+    title(sprintf('Subject %s, criterion %d%%',subj,round(100*propsSeen)));
 end
 xlabel('Stimulus 1')
 ylabel('Stimulus 2');

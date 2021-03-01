@@ -26,6 +26,9 @@ end
 % modulations, true to normalize.
 normFlag = false;
 
+%% Correct for guessing
+correctForGuessing = true;
+
 % Set up directories
 dataBaseDir = getpref(baseProject,'dataDir');
 analysisBaseDir = getpref(baseProject,'analysisDir');
@@ -34,7 +37,6 @@ analysisDir = fullfile(analysisBaseDir,subProject,subj,dataDate,'Separation_1');
 if (~exist(analysisDir,'dir'))
     mkdir(analysisDir);
 end
-
 
 % Get list of .mat files for the data we're analyzing
 dataFiles = dir(fullfile(dataDir,'*DetectionData.mat'));
@@ -66,10 +68,10 @@ end
 stimulusModulationsNormalized(stimulusModulations>0) = stimulusModulations(stimulusModulations>0)./incNormFactor;
 stimulusModulationsNormalized(stimulusModulations<0) = stimulusModulations(stimulusModulations<0)./decNormFactor;
 
-% Compute stimulus angle in 2-D space.  Just brute force wrt the
-% experimental design.
+% Compute stimulus angle in 2-D space.
 stimAngles = zeros(length(stimulusModulations),1);
 for n = 1:length(stimAngles)
+    % Figure out whether each stimulus is increment, decrement, or blank.
     if stimulusModulationsNormalized(n,1) < 0
         stim1 = 'Dec';
     elseif stimulusModulationsNormalized(n,1) > 0
@@ -77,7 +79,6 @@ for n = 1:length(stimAngles)
     else
         stim1 = 'Blank';
     end
-    
     if stimulusModulationsNormalized(n,2) < 0
         stim2 = 'Dec';
     elseif stimulusModulationsNormalized(n,2) > 0
@@ -85,7 +86,10 @@ for n = 1:length(stimAngles)
     else
         stim2 = 'Blank';
     end
-    stimAngles(n) = round(atand(stimulusModulationsNormalized(n,2)./stimulusModulationsNormalized(n,1)));
+    
+    % Get angle.  Blank comes back as NaN
+    stimAnglesRaw(n) = round(atand(stimulusModulationsNormalized(n,2)./stimulusModulationsNormalized(n,1)));
+    stimAngles(n) = stimAnglesRaw(n);
     
     if stimAngles(n) == 45
         if strcmp(stim1,'Dec') && strcmp(stim2, 'Dec')
@@ -109,8 +113,7 @@ noVal = 1;
 numCatchTrials = length(responseVector(mean(stimulusModulationsNormalized,2)==0));
 catchResponses = responseVector(mean(stimulusModulationsNormalized,2)==0);
 numCatchPos = length(catchResponses(catchResponses==yesVal));
-falsePosProp = numCatchPos/numCatchTrials;
-fprintf('False positive rate: %d out of %d; (%.2f percent)\n', numCatchPos, numCatchTrials, 100*(falsePosProp));
+fprintf('False positive rate: %d out of %d; (%.2f percent)\n', numCatchPos, numCatchTrials, 100*(numCatchPos/numCatchTrials));
 
 %% Compute PF for each modulation direction individually
 %
@@ -119,11 +122,6 @@ fprintf('False positive rate: %d out of %d; (%.2f percent)\n', numCatchPos, numC
 fprintf('Fitting modulation directions individually... ');
 stimAngleList = unique(stimAngles(isfinite(stimAngles)));
 modulationVectorLengths = sqrt(stimulusModulationsNormalized(:,1).^2 + stimulusModulationsNormalized(:,2).^2);
-
-% Set up the PF fitting (requires Palamedes toolbox)
-PF = @PAL_Logistic;
-searchGrid = [log10(mean(modulationVectorLengths)) 5 falsePosProp, 0.01];
-paramsFree = [1 1 0 0]; %[thresh slope guess lapse]; 0 = fixed; 1 = free
 
 % Pre-allocate
 paramsFitted_Individual = nan(length(stimAngleList),4);
@@ -157,12 +155,31 @@ for angleNum = 1:length(stimAngleList)
         end
     end
     
-    paramsFitted_Individual(angleNum,:) = PAL_PFML_Fit([-3 log10(stimLevels(angleNum,:))], [numCatchPos numPos(angleNum,:)], [numCatchTrials outOfNum(angleNum,:)], searchGrid, paramsFree, PF);
+    if (correctForGuessing)
+        pFA = numCatchPos/numCatchTrials;
+        pHit(angleNum,:) = numPos(angleNum,:)./outOfNum(angleNum,:);
+        pFACorrect = CorrectForGuessing(pFA,pFA);
+        pHitCorrected(angleNum,:) = CorrectForGuessing(pHit(angleNum,:),pFA);
+        index = find(pHitCorrected(angleNum,:) < 0);
+        pHitCorrected(angleNum,index) = 0;
+        numCatchPosFit = round(pFACorrect*numCatchTrials);
+        numPosFit(angleNum,:) = round(pHitCorrected(angleNum,:) .* outOfNum(angleNum,:));
+    else
+        numCatchPosFit = numCatchPos;
+        numPosFit = numPos;
+    end
+    
+    % Set up the PF fitting (requires Palamedes toolbox)
+    PF = @PAL_Logistic;
+    falsePosProp = numCatchPosFit/numCatchTrials;
+    searchGrid = [log10(mean(modulationVectorLengths)) 5 falsePosProp, 0.01];
+    paramsFree = [1 1 0 0]; %[thresh slope guess lapse]; 0 = fixed; 1 = free
+    paramsFitted_Individual(angleNum,:) = PAL_PFML_Fit([-3 log10(stimLevels(angleNum,:))], [numCatchPosFit numPosFit(angleNum,:)], [numCatchTrials outOfNum(angleNum,:)], searchGrid, paramsFree, PF);
     
     % Add to plot
     ax1 = subplot(1,3,1); hold on;
     h = plot(log10(xEval), PF(paramsFitted_Individual(angleNum,:), log10(xEval)), '-', 'LineWidth', 2);
-    plot(log10(stimLevels(angleNum,:)), numPos(angleNum,:)./outOfNum(angleNum,:), 's', ...
+    plot(log10(stimLevels(angleNum,:)), numPosFit(angleNum,:)./outOfNum(angleNum,:), 's', ...
         'MarkerEdgeColor', 'none', 'MarkerFaceColor', h.Color, 'MarkerSize', 10, 'HandleVisibility', 'off');
 end
 
@@ -178,7 +195,7 @@ fprintf('Done.\n');
 
 %% Fit everything together with slopes and guess/lapse rates to be equal across stimulus angles
 fprintf('Now fitting all angles with the same slope and guess rate... ');
-paramsFitted_Multi = PAL_PFML_FitMultiple(log10(stimLevels), numPos, outOfNum, searchGrid, PF, 'slopes', 'constrained', 'guessrates', ...
+paramsFitted_Multi = PAL_PFML_FitMultiple(log10(stimLevels), numPosFit, outOfNum, searchGrid, PF, 'slopes', 'constrained', 'guessrates', ...
     'fixed', 'lapserates', 'constrained', 'lapselimits', [0 0.05]);
 fprintf('Done.\n');
 
@@ -186,7 +203,7 @@ fprintf('Done.\n');
 for angleNum = 1:length(stimAngleList)
     ax2 = subplot(1,3,2); hold on;
     h2 = plot(log10(xEval), PF(paramsFitted_Multi(angleNum,:), log10(xEval)), '-', 'LineWidth', 2);
-    subplot(1,3,2), plot(log10(stimLevels(angleNum,:)), numPos(angleNum,:)./outOfNum(angleNum,:), 's', 'MarkerFaceColor', h2.Color, ...
+    subplot(1,3,2), plot(log10(stimLevels(angleNum,:)), numPosFit(angleNum,:)./outOfNum(angleNum,:), 's', 'MarkerFaceColor', h2.Color, ...
         'MarkerEdgeColor', 'none', 'MarkerSize', 10, 'HandleVisibility', 'off');
 end
 legend(num2str(stimAngleList), 'Location', 'NorthWest')
@@ -247,5 +264,12 @@ set(ax2, 'Position', [0.4 0.110 0.3347.*.66 0.8150])
 set(ax3, 'Position', [0.7 0.110 0.3347*.66 0.8150])
 
 %% Save fit data to mat file
-save(fullfile(analysisDir,sprintf('%s_%d_incDecFits_ConstrainedSlope.mat', subj,normFlag)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');
-print(gcf, fullfile(analysisDir,sprintf('%s_%d_incDecFits_ConstrainedSlope.png', subj,normFlag)), '-dpng2');
+save(fullfile(analysisDir,sprintf('%s_%d_%d_incDecFits_ConstrainedSlope.mat', subj,normFlag,correctForGuessing)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');
+print(gcf, fullfile(analysisDir,sprintf('%s_%d_%d_incDecFits_ConstrainedSlope.png', subj,normFlag,correctForGuessing)), '-dpng2');
+
+%% Correct for guessing
+function [pCorrected] = CorrectForGuessing(pHit,pFA)
+
+pCorrected = (pHit-pFA)/(1-pFA);
+
+end
