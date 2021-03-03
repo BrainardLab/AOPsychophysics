@@ -19,10 +19,16 @@ lockAngleAt0 = false;
 %% Correct for guessing
 correctForGuessing = true;
 
-% If fit gets stuck, try futzing with the value of errorScalar.
+%% Reflect data to mirror symmetry of two dots in the experiment
+reflect = true;
+
+%% Scale increment and decrement thresholds to be the same
+scaleIncrDecr = true;
+
+%% If fit gets stuck, try futzing with the value of errorScalar.
 errorScalar = 1000;
 
-% Which fits?
+%% Which fits?
 %
 % To normalize, or not to normalize? Select false to work with the fits
 % from the raw modulations, true for those from the normalized ones.
@@ -45,18 +51,21 @@ switch (subj)
         error('Specified subject number invalid')
 end
 
-% Set up directories.  Note that we're reading the output of the program
+%% Set up directories.
+%
+% Note that we're reading the output of the program
 % that fits psychometric functions, so the data comes from 'analysisDir'.
 analysisBaseDir = getpref(baseProject,'analysisDir');
 analysisDir = fullfile(analysisBaseDir,subProject,subj,dataDate,'Separation_1');
 
-% Read output of psychometric fitting
+%% Read output of psychometric fitting
 theData = load(fullfile(analysisDir,sprintf('%s_%d_%d_incDecFits_ConstrainedSlope.mat',subj,normFlag,correctForGuessing)));
 if isempty(theData)
     error('No fit data found');
 end
 
-% Evaluate the PF and convert back to x,y coordinates for ellipse fitting
+%% Evaluate the PF and convert back to x,y coordinates for ellipse fitting
+%
 % First, round to the nearest .1 above the guess rate (code won't be happy if you
 % try to evaluate the PF for prop seen below the lower asymptote)
 PF = @PAL_Logistic;
@@ -67,9 +76,68 @@ for n = 1:size(theData.paramsFitted_Multi,1)
     modLevels_PF(n,:) = 10.^PF(theData.paramsFitted_Multi(n,:), propSeen_Fit, 'inv');
 end
 
-% Then, convert to x and y coordinates
-xPlot_Fit = cosd(theData.stimAngleList).*modLevels_PF;
-yPlot_Fit = sind(theData.stimAngleList).*modLevels_PF;
+%% Get incremet and decrement thresholds
+for ii = 1:length(theData.stimAngleList)       
+    if (theData.stimAngleList(ii) == 0)
+        incrThresh = abs(cosd(theData.stimAngleList(ii)).*modLevels_PF(ii,:));
+    elseif (theData.stimAngleList(ii) == 270)
+        decrThresh = abs(sind(theData.stimAngleList(ii)).*modLevels_PF(ii,:));
+    end      
+end
+
+%% Convert to x and y coordinates
+%
+% As we do this, we also reflect the symmetric data points,
+% which makes the plots look better and also lets us
+% make some didactically useful plots.
+index = 1;
+for ii = 1:length(theData.stimAngleList)
+    % Get data in x,y form
+    xPlot_Fit(index,:) = cosd(theData.stimAngleList(ii)).*modLevels_PF(ii,:);
+    yPlot_Fit(index,:) = sind(theData.stimAngleList(ii)).*modLevels_PF(ii,:);
+    index = index+1;
+    
+    % This does the reflection.  Double up points on diagonal so that each
+    % datum counts same number of times in the fit.
+    if (reflect)
+        if (theData.stimAngleList(ii) == 0)
+            xPlot_Fit(index,:) = cosd(90).*modLevels_PF(ii,:);
+            yPlot_Fit(index,:) = sind(90).*modLevels_PF(ii,:);
+            index = index+1;
+        elseif (theData.stimAngleList(ii) == 270)
+            xPlot_Fit(index,:) = cosd(180).*modLevels_PF(ii,:);
+            yPlot_Fit(index,:) = sind(180).*modLevels_PF(ii,:);
+            index = index+1;
+        elseif (theData.stimAngleList(ii) == 45)
+            xPlot_Fit(index,:) = cosd(45).*modLevels_PF(ii,:);
+            yPlot_Fit(index,:) = sind(45).*modLevels_PF(ii,:);
+            index = index+1;
+        elseif (theData.stimAngleList(ii) == 225)
+            xPlot_Fit(index,:) = cosd(225).*modLevels_PF(ii,:);
+            yPlot_Fit(index,:) = sind(225).*modLevels_PF(ii,:);
+            index = index+1;
+        elseif (theData.stimAngleList(ii) < 0)
+            xPlot_Fit(index,:) = cosd(90-theData.stimAngleList(ii)).*modLevels_PF(ii,:);
+            yPlot_Fit(index,:) = sind(90-theData.stimAngleList(ii)).*modLevels_PF(ii,:);
+            index = index+1;
+        end
+    end
+end
+
+%% Make increments and decrements same scale, if desired
+if (scaleIncrDecr)
+    incrDecrScaleFactor = incrThresh./decrThresh;
+    for ii = 1:size(xPlot_Fit,1)
+        for jj = 1:size(xPlot_Fit,2)
+            if (xPlot_Fit(ii,jj) < 0)
+                xPlot_Fit(ii,jj) = incrDecrScaleFactor(jj)*xPlot_Fit(ii,jj);
+            end
+            if (yPlot_Fit(ii,jj) < 0)
+                yPlot_Fit(ii,jj) = incrDecrScaleFactor(jj)*yPlot_Fit(ii,jj);
+            end
+        end
+    end
+end
 
 %% Get data for desired proportions correct right format.
 %
@@ -81,15 +149,15 @@ yPlot_Fit = sind(theData.stimAngleList).*modLevels_PF;
 propsSeen = 0.70;
 if (length(propsSeen) > 1)
     for ii = 1:length(propsSeen)
-        whichRow = find(propSeen_Fit == propsSeen(ii));
-        xData = xPlot_Fit(:,whichRow)';
-        yData = yPlot_Fit(:,whichRow)';
+        whichCol = find(propSeen_Fit == propsSeen(ii));
+        xData = xPlot_Fit(:,whichCol)';
+        yData = yPlot_Fit(:,whichCol)';
         theDataToFit{ii} = [xData ; yData];
     end
 else
-    whichRow = find(propSeen_Fit == propsSeen);
-    xData = xPlot_Fit(:,whichRow)';
-    yData = yPlot_Fit(:,whichRow)';
+    whichCol = find(propSeen_Fit == propsSeen);
+    xData = xPlot_Fit(:,whichCol)';
+    yData = yPlot_Fit(:,whichCol)';
     theDataToFit = [xData ; yData];
 end
 
@@ -115,7 +183,7 @@ ylim([-theLim theLim]);
 axis('square');
 
 %% Fit.
-[ellParams,A,Ainv,Q] = FitEllipseQ(theDataToFit,'lockAngleAt0',lockAngleAt0,'errorScalar',errorScalar);
+[ellParams,A,Ainv,Q] = FitEllipseQ(theDataToFit,'lockAngleAt0',lockAngleAt0,'errorScalar',errorScalar,'initialParams',[incrThresh(end) decrThresh(end) 45]);
 
 %% Print ellipse parameters
 %
@@ -162,6 +230,7 @@ else
 end
 xlabel('Stimulus 1')
 ylabel('Stimulus 2');
+print(gcf, fullfile(analysisDir,sprintf('%s_%d_%d_Ellipse.tiff', subj,normFlag,correctForGuessing)), '-dtiff');
 
 %% Save fit data to mat file
 % save(fullfile(analysisDir,sprintf('%s_%d_incDecFits_ConstrainedSlope.mat', subj,normFlag)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');

@@ -11,7 +11,7 @@ subProject = 'IncrDecr1';
 % Select subject
 %   subj = '11043'; % WST
 %   subj = '11046'; % DHB
-subj = '11046';
+subj = '11043';
 switch (subj)
     case {'11043' '11046'}
         dataDate = '20200131';
@@ -190,7 +190,7 @@ ylim([0 1]);
 axis square
 xlabel('Log10 modulation intensity (au)', 'FontSize', 14);
 ylabel('Prop seen', 'FontSize', 14);
-title('Slopes unconstrained; guess rate fixed');
+title('Slopes unconstrained');
 fprintf('Done.\n');
 
 %% Fit everything together with slopes and guess/lapse rates to be equal across stimulus angles
@@ -209,7 +209,7 @@ end
 legend(num2str(stimAngleList), 'Location', 'NorthWest')
 xlim([-1.5 0])
 ylim([0 1]);
-title('Slopes constrained; guess rate fixed');
+title('Slopes constrained');
 axis square;
 xlabel('Log10 modulation intensity (au)', 'FontSize', 14);
 ylabel('Prop seen', 'FontSize', 14);
@@ -265,7 +265,7 @@ set(ax3, 'Position', [0.7 0.110 0.3347*.66 0.8150])
 
 %% Save fit data to mat file
 save(fullfile(analysisDir,sprintf('%s_%d_%d_incDecFits_ConstrainedSlope.mat', subj,normFlag,correctForGuessing)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');
-print(gcf, fullfile(analysisDir,sprintf('%s_%d_%d_incDecFits_ConstrainedSlope.png', subj,normFlag,correctForGuessing)), '-dpng2');
+print(gcf, fullfile(analysisDir,sprintf('%s_%d_%d_incDecFits_ConstrainedSlope.tiff', subj,normFlag,correctForGuessing)), '-dtiff');
 
 %% Correct for guessing
 function [pCorrected] = CorrectForGuessing(pHit,pFA)
