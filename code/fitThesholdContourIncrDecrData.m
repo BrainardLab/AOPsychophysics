@@ -1,29 +1,62 @@
-% fitEllipsesToIncrDecrData
+function fitThresholdContourToIncrDecrData(options)
+% fitThresholdContourIncrDecrData
 %
 % Script to combine data from inc/dec experiments and fit PFs to various
 % axes in the 2D stimulus space
 %
 % See also: FitEllipseQ, PointsOnEllipseQ, EllipsoidMatricesGenerate.
 
+%   Optional key/value pairs
+%      'subj'       - String. Subject ID.  Default '11043';
+%      'dataDate'   - String. Date data collected. Default '20200131'.
+%      'subProject' - String. Subproject. Default 'IncrDecr1'.
+%      'condition'  - String. Specify condition. Default 'Separation_1'.
+%      'norm'       - Boolean. Normalize increment constrast by max used, and same for
+%                     decrement contrast. Default false.
+%      'corrGuess'  - Boolean. Correct for guessing using high threshold
+%                     model. Default true.
+%      'reflIn'     - Boolean. Read fits that treat stim1 and stim2 as
+%                     symmetric. Default false.
+%      'reflOut'    - Boolean. Reflect data before analysis. Default false.
+%      'lockAngle'  - Boolean. Lock ellipse angle to be oriented with axes?
+%                     Default false.
+%      'constraintedSlopeFits' - Boolean. Fit data with PF constrained
+%                     slopes. Default false.
+%      'scaleDecr'  - Boolean. Scale decrement thresholds to match
+%                     increments. Default false.
+%      
+
+%% Pick up optional arguments 
+arguments
+    options.subj string = '11043';
+    options.dataDate string = '20200131';
+    options.subProject string = 'IncrDecr1';
+    options.condition string = 'Separation_1';
+    options.norm (1,1) logical = false;
+    options.corrGuess (1,1) logical = true;
+    options.refl (1,1) logical = false;
+    options.lockAngle (1,1) logical = false;
+    options.constrainedSlopeFits (1,1) logical = false;
+    options.scaleDecr (1,1) logical = false;
+end
+
 %% Housekeeping
-clear; close all
+close all
 baseProject = 'AOPsychophysics';
-subProject = 'IncrDecr1';
+subProject = options.subProject;
 
 %% Parameters
 %
 % By setting lockAngle to true, you get ellipses with axes aligned with
 % x and y axis.
-lockAngle = false;
-if (lockAngle)
+if (options.lockAngle)
     lockAngleStr = 'lockAngle';
 else
     lockAngleStr = 'noLockAngle';
 end
 
 %% Scale decrement thresholds to be the same as increments?
-scaleDecr = true;
-if (scaleDecr)
+if (options.scaleDecr)
     scaleDecrStr = 'scaleDecr';
 else
     scaleDecrStr = 'noScaleDecr';
@@ -33,30 +66,26 @@ end
 %
 % To normalize, or not to normalize? Select false to work with the raw
 % modulations, true to normalize.
-norm = false;
-if (norm)
+if (options.norm)
     normStr = 'norm';
 else
     normStr = 'notnorm';
 end
 
 %% Correct for guessing?
-corrGuess = true;
-if (corrGuess)
+if (options.corrGuess)
     corrGuessStr = 'corrguess';
 else
     corrGuessStr = 'notcorrguess';
 end
 
 %% Reflect data so that stim1 and stim2 are treated as symmetric?
-reflIn = false;
-reflOut = false;
-if (reflIn)
+if (options.reflIn)
     reflInStr = 'refl';
 else
     reflInStr = 'noRefl';
 end
-if (reflOut)
+if (options.reflOut)
     reflOutStr = 'reflOut';
 else
     reflOutStr = 'noReflOut';
@@ -69,14 +98,12 @@ errorScalar = 1000;
 %
 % To normalize, or not to normalize? Select false to work with the fits
 % from the raw modulations, true for those from the normalized ones.
-norm = false;
-if (norm)
+if (options.norm)
     error('Need to implement analysis of fits from normalized modulations');
 end
 
 % Analyze fits with slopes constrained?
-constrainedSlopeFits = true;
-if (~constrainedSlopeFits)
+if (~options.constrainedSlopeFits)
     error('Need to implement analysis of unconstrained slope fits');
 end
 
@@ -85,11 +112,9 @@ end
 % Select subject
 %   subj = '11043'; % WST
 %   subj = '11046'; % DHB
-subj = '11046';
-switch (subj)
+switch (options.subj)
     case {'11043' '11046'}
-        dataDate = '20200131';
-        fprintf('Subject ID: %s\n', subj);
+        fprintf('Subject ID: %s\n', options.subj);
     otherwise
         error('Specified subject number invalid')
 end
@@ -100,10 +125,10 @@ end
 % that fits psychometric functions, so the data comes from 'analysisDir'.
 analysisSubDir = sprintf('%s_%s_%s',normStr,corrGuessStr,reflInStr);
 analysisBaseDir = getpref(baseProject,'analysisDir');
-analysisDir = fullfile(analysisBaseDir,subProject,subj,dataDate,'Separation_1',analysisSubDir);
+analysisDir = fullfile(analysisBaseDir,subProject,options.subj,options.dataDate,options.condition,analysisSubDir);
 
 %% Read output of psychometric fitting
-theData = load(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.mat',subj)));
+theData = load(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.mat',options.subj)));
 if isempty(theData)
     error('No fit data found');
 end
@@ -120,14 +145,22 @@ for n = 1:size(theData.paramsFitted_Multi,1)
     modLevels_PF(n,:) = 10.^PF(theData.paramsFitted_Multi(n,:), propSeen_Fit, 'inv');
 end
 
-%% Get incremet and decrement thresholds
+%% Get increment and decrement thresholds
+incrThresh = [];
+decrThresh = [];
 for pp = 1:length(theData.stimAngleList)       
     if (theData.stimAngleList(pp) == 0)
-        incrThresh = abs(cosd(theData.stimAngleList(pp)).*modLevels_PF(pp,:));
+        incrThresh = [incrThresh abs(cosd(theData.stimAngleList(pp)).*modLevels_PF(pp,:))];
+    elseif (theData.stimAngleList(pp) == 90)
+        incrThresh = [incrThresh abs(sind(theData.stimAngleList(pp)).*modLevels_PF(pp,:))];
+    elseif (theData.stimAngleList(pp) == 180)
+        decrThresh = [decrThresh abs(cosd(theData.stimAngleList(pp)).*modLevels_PF(pp,:))];
     elseif (theData.stimAngleList(pp) == 270)
-        decrThresh = abs(sind(theData.stimAngleList(pp)).*modLevels_PF(pp,:));
+        decrThresh = [decrThresh abs(sind(theData.stimAngleList(pp)).*modLevels_PF(pp,:))];
     end      
 end
+incrThresh = mean(incrThresh);
+decrThresh = mean(decrThresh);
 
 %% Convert to x and y coordinates
 %
@@ -144,7 +177,8 @@ for pp = 1:length(theData.stimAngleList)
     
     % This does the reflection.  Double up points on diagonal so that each
     % datum counts same number of times in the fit.
-    if (reflOut)
+    if (options.reflOut)
+        error('Need to fix reflection up here');
         if (theData.stimAngleList(pp) == 0)
             xPlot_Fit(index,:) = cosd(90).*modLevels_PF(pp,:);
             yPlot_Fit(index,:) = sind(90).*modLevels_PF(pp,:);
@@ -175,7 +209,7 @@ for pp = 1:length(theData.stimAngleList)
 end
 
 %% Make increments and decrements same scale, if desired
-if (scaleDecr)
+if (options.scaleDecr)
     incrDecrScaleFactor = incrThresh./decrThresh;
     for pp = 1:size(xPlot_Fit,1)
         for jj = 1:size(xPlot_Fit,2)
@@ -226,7 +260,7 @@ else
 end
 
 %% Fit.
-[ellParams,A,Ainv,Q] = FitEllipseQ(theDataToFit,'lockAngleAt0',lockAngle,'errorScalar',errorScalar,'initialParams',[incrThresh(end) decrThresh(end) 45]);
+[ellParams,A,Ainv,Q] = FitEllipseQ(theDataToFit,'lockAngleAt0',options.lockAngle,'errorScalar',errorScalar,'initialParams',[incrThresh(end) decrThresh(end) 45]);
 
 %% Print ellipse parameters
 %
@@ -236,7 +270,7 @@ end
 %
 % There is a vestigal printout call if you only fit one ellipse and don't
 % put it in a cell array.
-if (lockAngle)
+if (options.lockAngle)
     if (iscell(theDataToFit))
         for cc = 1:length(theDataToFit)
             fprintf('x-axis length: %0.2f, y-axis length: %0.2f, major axis angle %0.1f deg\n',2/ellParams{cc}(1),2/ellParams{cc}(2),ellParams{cc}(3));
@@ -261,7 +295,7 @@ nCirclePoints = 100;
 circlePoints = UnitCircleGenerate(nCirclePoints);
 ellPoints = PointsOnEllipseQ(Q,circlePoints);
 if (iscell(ellPoints))
-    titleStr = sprintf('Subject %s, critera',subj);
+    titleStr = sprintf('Subject %s, critera',options.subj);
     for cc = 1:length(ellPoints)
         plot(ellPoints{cc}(1,:),ellPoints{cc}(2,:),theColors(cc),'LineWidth',2);
         titleStr = [titleStr sprintf(' %d%%',round(100*propsSeen(cc)))];
@@ -269,7 +303,7 @@ if (iscell(ellPoints))
     title(titleStr);
 else
     plot(ellPoints(1,:),ellPoints(2,:),'r','LineWidth',2);
-    title(sprintf('Subject %s, criterion %d%%',subj,round(100*propsSeen)));
+    title(sprintf('Subject %s, criterion %d%%',options.subj,round(100*propsSeen)));
 end
 theLim = 2;
 plot([-theLim theLim],[0 0],'k:','LineWidth',1);
@@ -279,7 +313,7 @@ ylim([-theLim theLim]);
 axis('square');
 xlabel('Contrast 1')
 ylabel('Contrast 2');
-print(theEllipseFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_%sEllipse.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+print(theEllipseFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_%sEllipse.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Build up some explanatory plots
 %
@@ -300,7 +334,7 @@ ylim([-theLim theLim]);
 axis('square');
 xlabel('Contrast 1')
 ylabel('Contrast 2');
-print(theIncrFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_%sSingleIncr.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+print(theIncrFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_%sSingleIncr.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Both incremental stimuli
 index = find(angles_Fit == 90);
@@ -311,7 +345,7 @@ if (iscell(theDataToFit))
 else
     plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
 end
-print(theIncrFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_DoubleIncr.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+print(theIncrFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_DoubleIncr.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 theIncrFig1 = theIncrFig.copy;
 figure(theIncrFig);
 
@@ -327,7 +361,7 @@ lineParams = [x ones(size(x))]\y;
 linePlotX = linspace(-theLim,theLim,100)';
 linePlotY = [linePlotX ones(size(linePlotX))]*lineParams;
 plot(linePlotX,linePlotY,'r','LineWidth',3);
-print(theIncrFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_DoubleIncrWithLine.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+print(theIncrFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_DoubleIncrWithLine.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Add incr-incr datum
 if (iscell(theDataToFit))
@@ -337,7 +371,7 @@ if (iscell(theDataToFit))
 else
     plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
 end
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrWithDoubleIncrLine.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrWithDoubleIncrLine.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Add incr-incr
 figure(theIncrFig1);
@@ -349,7 +383,7 @@ if (iscell(theDataToFit))
 else
     plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
 end
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_Incr.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_Incr.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Fit linear model to single increments and plot
 neededAngles = [0 45 90];
@@ -363,7 +397,7 @@ lineParams = [x ones(size(x))]\y;
 linePlotX = linspace(-theLim,theLim,100)';
 linePlotY = [linePlotX ones(size(linePlotX))]*lineParams;
 plot(linePlotX,linePlotY,'r','LineWidth',3);
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrWithBestIncrLine.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrWithBestIncrLine.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Add decr-decr points
 neededAngles = [180 225 270];
@@ -378,7 +412,7 @@ if (iscell(theDataToFit))
 else
     plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
 end
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrAndDecrWithBestIncrLine.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrAndDecrWithBestIncrLine.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Add decr-decr line
 neededAngles = [180 225 270];
@@ -392,7 +426,7 @@ lineParams = [x ones(size(x))]\y;
 linePlotX = linspace(-theLim,theLim,100)';
 linePlotY = [linePlotX ones(size(linePlotX))]*lineParams;
 plot(linePlotX,linePlotY,'r','LineWidth',3);
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrAndDecrWithBestIncrAndDecrLines.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrAndDecrWithBestIncrAndDecrLines.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Add the critical incr-decr points
 index = find((angles_Fit > 90 & angles_Fit < 180) | (angles_Fit > 270 & angles_Fit < 360));
@@ -403,4 +437,4 @@ if (iscell(theDataToFit))
 else
     plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
 end
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_AllDataWithBestIncrAndDecrLines.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_AllDataWithBestIncrAndDecrLines.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');

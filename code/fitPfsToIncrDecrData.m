@@ -13,7 +13,7 @@ function fitPfsToIncrDecrData(options)
 %                     decrement contrast. Default false.
 %      'corrGuess'  - Boolean. Correct for guessing using high threshold
 %                     model. Default true.
-%      'reflect'    - Boolean. Treat stim1 and stim2 as symmetric, and reflect data
+%      'refl'       - Boolean. Treat stim1 and stim2 as symmetric, and reflect data
 %                     Default false.
 %
 %   Data are fit with independent psychometric functions in each direction
