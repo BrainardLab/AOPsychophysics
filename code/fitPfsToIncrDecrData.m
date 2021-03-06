@@ -1,15 +1,18 @@
-function fitPfsToIncrDecrData
+function fitPfsToIncrDecrData(options)
 % Combine data from inc/dec experiments and fit PFs
 %
 % Description:
-%   Read in data from the AO inc/dec experiments and fit PFs.  Various
-%   options available by setting flags.  These are:
-%     norm:         Normalize increment constrast by max used, and same for
-%                   decrement contrast.
-%     corrGuess:    Correct for guessing using high threshold model.
-%     reflect:      Treat stim1 and stim2 as symmetric, and reflect data
+%   Read in data from the AO inc/dec experiments and fit PFs.
 %
-%   Additional parameters determine subject and data of experiment.
+%   Optional key/value pairs
+%      'subj'       - String. Subject ID.  Default '11043';
+%      'dataDate'   - String. Date data collected. Default '20200131'.
+%      'norm'       - Boolean. Normalize increment constrast by max used, and same for
+%                     decrement contrast. Default false.
+%      'corrGuess'  - Boolean. Correct for guessing using high threshold
+%                     model. Default true.
+%      'reflect'    - Boolean. Treat stim1 and stim2 as symmetric, and reflect data
+%                     Default false.
 %
 %   Data are fit with independent psychometric functions in each direction
 %   as well as with fits constrained across directions.  
@@ -22,21 +25,24 @@ function fitPfsToIncrDecrData
 %   xx/xx/xx  wst  Wrote initial version.
 %   03/05/21  dhb  Cleaning up and commenting after some earlier changes.
 
+%% Pick up optional arguments 
+arguments
+    options.subj string = '11043';
+    options.dataDate string = '20200131';
+    options.norm (1,1) logical = false;
+    options.corrGuess (1,1) logical = true;
+    options.refl (1,1) logical = false;
+end
+
 %% Housekeeping
-clear; close all
+close all
 baseProject = 'AOPsychophysics';
 subProject = 'IncrDecr1';
 
 %% Load in the data files (update directories to wherever these data live on your machine)
-%
-% Select subject
-%   subj = '11043'; % WST
-%   subj = '11046'; % DHB
-subj = '11046';
-switch (subj)
+switch (options.subj)
     case {'11043' '11046'}
-        dataDate = '20200131';
-        fprintf('Subject ID: %s\n', subj);
+        fprintf('Subject ID: %s\n', options.subj);
     otherwise
         error('Specified subject number invalid')
 end
@@ -45,24 +51,21 @@ end
 %
 % To normalize, or not to normalize? Select false to work with the raw
 % modulations, true to normalize.
-norm = false;
-if (norm)
+if (options.norm)
     normStr = 'norm';
 else
     normStr = 'notnorm';
 end
 
 %% Correct for guessing?
-corrGuess = true;
-if (corrGuess)
+if (options.corrGuess)
     corrGuessStr = 'corrguess';
 else
     corrGuessStr = 'notcorrguess';
 end
 
 %% Refelct data so that stim1 and stim2 are treated as symmetric?
-refl = false;
-if (refl)
+if (options.refl)
     reflStr = 'refl';
 else
     reflStr = 'norefl';
@@ -72,8 +75,8 @@ end
 analysisSubDir = sprintf('%s_%s_%s',normStr,corrGuessStr,reflStr);
 dataBaseDir = getpref(baseProject,'dataDir');
 analysisBaseDir = getpref(baseProject,'analysisDir');
-dataDir = fullfile(dataBaseDir,subProject,subj,dataDate,'Separation_1');
-analysisDir = fullfile(analysisBaseDir,subProject,subj,dataDate,'Separation_1',analysisSubDir);
+dataDir = fullfile(dataBaseDir,subProject,options.subj,options.dataDate,'Separation_1');
+analysisDir = fullfile(analysisBaseDir,subProject,options.subj,options.dataDate,'Separation_1',analysisSubDir);
 if (~exist(analysisDir,'dir'))
     mkdir(analysisDir);
 end
@@ -107,7 +110,7 @@ end
 
 %% Normalize if desired
 stimulusModulationsNormalized = zeros(size(stimulusContrasts)); % Pre-allocate
-if norm == 1    
+if options.norm == 1    
     decNormFactor = max(abs(unique(stimulusContrasts(stimulusContrasts<0))));
     incNormFactor = max(unique(stimulusContrasts(stimulusContrasts>0)));
 else
@@ -152,7 +155,7 @@ end
 
 %% Reflect around 45 degree line if desired
 stimAngles = stimAnglesRaw;
-if (refl)
+if (options.refl)
     for n = 1:length(stimAnglesRaw)
         if (stimAnglesRaw(n) > 45 && stimAnglesRaw(n) < 225)
             delta = stimAnglesRaw(n) - 45;
@@ -230,7 +233,7 @@ for angleNum = 1:length(stimAngleList)
         end
     end
     
-    if (corrGuess)
+    if (options.corrGuess)
         pFA = numCatchPos/numCatchTrials;
         pHit(angleNum,:) = numPos(angleNum,:)./outOfNum(angleNum,:);
         pFACorrect = CorrectForGuessing(pFA,pFA);
@@ -341,8 +344,10 @@ set(ax2, 'Position', [0.4 0.110 0.3347.*.66 0.8150])
 set(ax3, 'Position', [0.7 0.110 0.3347*.66 0.8150])
 
 %% Save fit data to mat file
-save(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.mat', subj)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');
-print(gcf, fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.tiff', subj)), '-dtiff');
+save(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.mat', options.subj)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');
+print(gcf, fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.tiff', options.subj)), '-dtiff');
+
+end
 
 %% Correct for guessing
 function [pCorrected] = CorrectForGuessing(pHit,pFA)
