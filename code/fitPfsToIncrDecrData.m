@@ -8,7 +8,7 @@ function fitPfsToIncrDecrData(options)
 %      'subj'       - String. Subject ID.  Default '11043';
 %      'dataDate'   - String. Date data collected. Default '20200131'.
 %      'subProject' - String. Subproject. Default 'IncrDecr1'.
-%      'condition'  - String. Specify condition. Default 'Separation1'.
+%      'condition'  - String. Specify condition. Default 'Separation_1'.
 %      'norm'       - Boolean. Normalize increment constrast by max used, and same for
 %                     decrement contrast. Default false.
 %      'corrGuess'  - Boolean. Correct for guessing using high threshold
@@ -32,7 +32,7 @@ arguments
     options.subj string = '11043';
     options.dataDate string = '20200131';
     options.subProject string = 'IncrDecr1';
-    options.condition string = 'Separation1';
+    options.condition string = 'Separation_1';
     options.norm (1,1) logical = false;
     options.corrGuess (1,1) logical = true;
     options.refl (1,1) logical = false;
