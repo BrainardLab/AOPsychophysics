@@ -7,6 +7,8 @@ function fitPfsToIncrDecrData(options)
 %   Optional key/value pairs
 %      'subj'       - String. Subject ID.  Default '11043';
 %      'dataDate'   - String. Date data collected. Default '20200131'.
+%      'subProject' - String. Subproject. Default 'IncrDecr1'.
+%      'condition'  - String. Specify condition. Default 'Separation1'.
 %      'norm'       - Boolean. Normalize increment constrast by max used, and same for
 %                     decrement contrast. Default false.
 %      'corrGuess'  - Boolean. Correct for guessing using high threshold
@@ -29,6 +31,8 @@ function fitPfsToIncrDecrData(options)
 arguments
     options.subj string = '11043';
     options.dataDate string = '20200131';
+    options.subProject string = 'IncrDecr1';
+    options.condition string = 'Separation1';
     options.norm (1,1) logical = false;
     options.corrGuess (1,1) logical = true;
     options.refl (1,1) logical = false;
@@ -37,7 +41,7 @@ end
 %% Housekeeping
 close all
 baseProject = 'AOPsychophysics';
-subProject = 'IncrDecr1';
+subProject = options.subProject;
 
 %% Load in the data files (update directories to wherever these data live on your machine)
 switch (options.subj)
@@ -75,8 +79,8 @@ end
 analysisSubDir = sprintf('%s_%s_%s',normStr,corrGuessStr,reflStr);
 dataBaseDir = getpref(baseProject,'dataDir');
 analysisBaseDir = getpref(baseProject,'analysisDir');
-dataDir = fullfile(dataBaseDir,subProject,options.subj,options.dataDate,'Separation_1');
-analysisDir = fullfile(analysisBaseDir,subProject,options.subj,options.dataDate,'Separation_1',analysisSubDir);
+dataDir = fullfile(dataBaseDir,subProject,options.subj,options.dataDate,options.condition);
+analysisDir = fullfile(analysisBaseDir,subProject,options.subj,options.dataDate,options.condition,analysisSubDir);
 if (~exist(analysisDir,'dir'))
     mkdir(analysisDir);
 end
