@@ -12,18 +12,55 @@ subProject = 'IncrDecr1';
 
 %% Parameters
 %
-% By setting lockAngleAt0 to true, you get ellipses with axes aligned with
+% By setting lockAngle to true, you get ellipses with axes aligned with
 % x and y axis.
-lockAngleAt0 = false;
+lockAngle = false;
+if (lockAngle)
+    lockAngleStr = 'lockAngle';
+else
+    lockAngleStr = 'noLockAngle';
+end
 
-%% Correct for guessing
-correctForGuessing = true;
+%% Scale decrement thresholds to be the same as increments?
+scaleDecr = true;
+if (scaleDecr)
+    scaleDecrStr = 'scaleDecr';
+else
+    scaleDecrStr = 'noScaleDecr';
+end
 
-%% Reflect data to mirror symmetry of two dots in the experiment
-reflect = true;
+%% Normalize?
+%
+% To normalize, or not to normalize? Select false to work with the raw
+% modulations, true to normalize.
+norm = false;
+if (norm)
+    normStr = 'norm';
+else
+    normStr = 'notnorm';
+end
 
-%% Scale increment and decrement thresholds to be the same
-scaleIncrDecr = true;
+%% Correct for guessing?
+corrGuess = true;
+if (corrGuess)
+    corrGuessStr = 'corrguess';
+else
+    corrGuessStr = 'notcorrguess';
+end
+
+%% Reflect data so that stim1 and stim2 are treated as symmetric?
+reflIn = false;
+reflOut = false;
+if (reflIn)
+    reflInStr = 'refl';
+else
+    reflInStr = 'noRefl';
+end
+if (reflOut)
+    reflOutStr = 'reflOut';
+else
+    reflOutStr = 'noReflOut';
+end
 
 %% If fit gets stuck, try futzing with the value of errorScalar.
 errorScalar = 1000;
@@ -32,9 +69,15 @@ errorScalar = 1000;
 %
 % To normalize, or not to normalize? Select false to work with the fits
 % from the raw modulations, true for those from the normalized ones.
-normFlag = false;
-if (normFlag)
+norm = false;
+if (norm)
     error('Need to implement analysis of fits from normalized modulations');
+end
+
+% Analyze fits with slopes constrained?
+constrainedSlopeFits = true;
+if (~constrainedSlopeFits)
+    error('Need to implement analysis of unconstrained slope fits');
 end
 
 %% Load in the data files (update directories to wherever these data live on your machine)
@@ -55,11 +98,12 @@ end
 %
 % Note that we're reading the output of the program
 % that fits psychometric functions, so the data comes from 'analysisDir'.
+analysisSubDir = sprintf('%s_%s_%s',normStr,corrGuessStr,reflInStr);
 analysisBaseDir = getpref(baseProject,'analysisDir');
-analysisDir = fullfile(analysisBaseDir,subProject,subj,dataDate,'Separation_1');
+analysisDir = fullfile(analysisBaseDir,subProject,subj,dataDate,'Separation_1',analysisSubDir);
 
 %% Read output of psychometric fitting
-theData = load(fullfile(analysisDir,sprintf('%s_%d_%d_incDecFits_ConstrainedSlope.mat',subj,normFlag,correctForGuessing)));
+theData = load(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.mat',subj)));
 if isempty(theData)
     error('No fit data found');
 end
@@ -100,7 +144,7 @@ for pp = 1:length(theData.stimAngleList)
     
     % This does the reflection.  Double up points on diagonal so that each
     % datum counts same number of times in the fit.
-    if (reflect)
+    if (reflOut)
         if (theData.stimAngleList(pp) == 0)
             xPlot_Fit(index,:) = cosd(90).*modLevels_PF(pp,:);
             yPlot_Fit(index,:) = sind(90).*modLevels_PF(pp,:);
@@ -131,7 +175,7 @@ for pp = 1:length(theData.stimAngleList)
 end
 
 %% Make increments and decrements same scale, if desired
-if (scaleIncrDecr)
+if (scaleDecr)
     incrDecrScaleFactor = incrThresh./decrThresh;
     for pp = 1:size(xPlot_Fit,1)
         for jj = 1:size(xPlot_Fit,2)
@@ -182,7 +226,7 @@ else
 end
 
 %% Fit.
-[ellParams,A,Ainv,Q] = FitEllipseQ(theDataToFit,'lockAngleAt0',lockAngleAt0,'errorScalar',errorScalar,'initialParams',[incrThresh(end) decrThresh(end) 45]);
+[ellParams,A,Ainv,Q] = FitEllipseQ(theDataToFit,'lockAngleAt0',lockAngle,'errorScalar',errorScalar,'initialParams',[incrThresh(end) decrThresh(end) 45]);
 
 %% Print ellipse parameters
 %
@@ -192,7 +236,7 @@ end
 %
 % There is a vestigal printout call if you only fit one ellipse and don't
 % put it in a cell array.
-if (lockAngleAt0)
+if (lockAngle)
     if (iscell(theDataToFit))
         for cc = 1:length(theDataToFit)
             fprintf('x-axis length: %0.2f, y-axis length: %0.2f, major axis angle %0.1f deg\n',2/ellParams{cc}(1),2/ellParams{cc}(2),ellParams{cc}(3));
@@ -227,7 +271,7 @@ else
     plot(ellPoints(1,:),ellPoints(2,:),'r','LineWidth',2);
     title(sprintf('Subject %s, criterion %d%%',subj,round(100*propsSeen)));
 end
-theLim = 0.5;
+theLim = 2;
 plot([-theLim theLim],[0 0],'k:','LineWidth',1);
 plot([0 0],[-theLim theLim],'k:','LineWidth',1);
 xlim([-theLim theLim]);
@@ -235,7 +279,7 @@ ylim([-theLim theLim]);
 axis('square');
 xlabel('Contrast 1')
 ylabel('Contrast 2');
-print(theEllipseFig, fullfile(analysisDir,sprintf('%s_%d_%d_%d_%d_Ellipse.tiff', subj,normFlag,correctForGuessing,lockAngleAt0,scaleIncrDecr)), '-dtiff');
+print(theEllipseFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_%sEllipse.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Build up some explanatory plots
 %
@@ -256,7 +300,7 @@ ylim([-theLim theLim]);
 axis('square');
 xlabel('Contrast 1')
 ylabel('Contrast 2');
-print(theIncrFig, fullfile(analysisDir,sprintf('%s_%d_%d_%d_%d_SingleIncr.tiff', subj,normFlag,correctForGuessing,lockAngleAt0,scaleIncrDecr)), '-dtiff');
+print(theIncrFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_%sSingleIncr.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Both incremental stimuli
 index = find(angles_Fit == 90);
@@ -267,7 +311,7 @@ if (iscell(theDataToFit))
 else
     plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
 end
-print(theIncrFig, fullfile(analysisDir,sprintf('%s_%d_%d_%d_%d_DoubleIncr.tiff', subj,normFlag,correctForGuessing,lockAngleAt0,scaleIncrDecr)), '-dtiff');
+print(theIncrFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_DoubleIncr.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 theIncrFig1 = theIncrFig.copy;
 figure(theIncrFig);
 
@@ -283,7 +327,7 @@ lineParams = [x ones(size(x))]\y;
 linePlotX = linspace(-theLim,theLim,100)';
 linePlotY = [linePlotX ones(size(linePlotX))]*lineParams;
 plot(linePlotX,linePlotY,'r','LineWidth',3);
-print(theIncrFig, fullfile(analysisDir,sprintf('%s_%d_%d_%d_%d_DoubleIncrWithLine.tiff', subj,normFlag,correctForGuessing,lockAngleAt0,scaleIncrDecr)), '-dtiff');
+print(theIncrFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_DoubleIncrWithLine.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Add incr-incr datum
 if (iscell(theDataToFit))
@@ -293,7 +337,7 @@ if (iscell(theDataToFit))
 else
     plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
 end
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%d_%d_%d_%d_IncrWithDoubleIncrLine.tiff', subj,normFlag,correctForGuessing,lockAngleAt0,scaleIncrDecr)), '-dtiff');
+print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrWithDoubleIncrLine.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Add incr-incr
 figure(theIncrFig1);
@@ -305,7 +349,7 @@ if (iscell(theDataToFit))
 else
     plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
 end
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%d_%d_%d_%d_Incr.tiff', subj,normFlag,correctForGuessing,lockAngleAt0,scaleIncrDecr)), '-dtiff');
+print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_Incr.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Fit linear model to single increments and plot
 neededAngles = [0 45 90];
@@ -319,7 +363,7 @@ lineParams = [x ones(size(x))]\y;
 linePlotX = linspace(-theLim,theLim,100)';
 linePlotY = [linePlotX ones(size(linePlotX))]*lineParams;
 plot(linePlotX,linePlotY,'r','LineWidth',3);
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%d_%d_%d_%d_IncrWithBestIncrLine.tiff', subj,normFlag,correctForGuessing,lockAngleAt0,scaleIncrDecr)), '-dtiff');
+print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrWithBestIncrLine.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Add decr-decr points
 neededAngles = [180 225 270];
@@ -334,7 +378,7 @@ if (iscell(theDataToFit))
 else
     plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
 end
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%d_%d_%d_%d_IncrDecrWithBestIncrLine.tiff', subj,normFlag,correctForGuessing,lockAngleAt0,scaleIncrDecr)), '-dtiff');
+print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrAndDecrWithBestIncrLine.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Add decr-decr line
 neededAngles = [180 225 270];
@@ -348,4 +392,15 @@ lineParams = [x ones(size(x))]\y;
 linePlotX = linspace(-theLim,theLim,100)';
 linePlotY = [linePlotX ones(size(linePlotX))]*lineParams;
 plot(linePlotX,linePlotY,'r','LineWidth',3);
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%d_%d_%d_%d_IncrDecrWithBestIncrDecrLines.tiff', subj,normFlag,correctForGuessing,lockAngleAt0,scaleIncrDecr)), '-dtiff');
+print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrAndDecrWithBestIncrAndDecrLines.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+
+%% Add the critical incr-decr points
+index = find((angles_Fit > 90 & angles_Fit < 180) | (angles_Fit > 270 & angles_Fit < 360));
+if (iscell(theDataToFit))
+    for pp = 1:length(propsSeen)
+        plot(theDataToFit{pp}(1,index),theDataToFit{pp}(2,index),[theColors(pp) 'o'],'MarkerFaceColor',theColors(pp),'MarkerSize',12);
+    end
+else
+    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
+end
+print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_AllDataWithBestIncrAndDecrLines.tiff', subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
