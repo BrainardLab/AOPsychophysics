@@ -1,5 +1,25 @@
-% Script to combine data from inc/dec experiments and fit PFs to various
-% axes in the 2D stimulus space
+% Combine data from inc/dec experiments and fit PFs
+%
+% Description:
+%   Read in data from the AO inc/dec experiments and fit PFs.  Various
+%   options available by setting flags.  These are:
+%     norm:         Normalize increment constrast by max used, and same for
+%                   decrement contrast.
+%     corrGuess:    Correct for guessing using high threshold model.
+%     reflect:      Treat stim1 and stim2 as symmetric, and reflect data
+%
+%   Additional parameters determine subject and data of experiment.
+%
+%   Data are fit with independent psychometric functions in each direction
+%   as well as with fits constrained across directions.  
+%
+%   A little more work to make sure we're happy with how guess and lapse
+%   rates are set/constrained in the fits would be good before this
+%   analysis is finalized.
+
+% History:
+%   xx/xx/xx  wst  Wrote initial version.
+%   03/05/21  dhb  Cleaning up and commenting after some earlier changes.
 
 %% Housekeeping
 clear; close all
@@ -11,7 +31,7 @@ subProject = 'IncrDecr1';
 % Select subject
 %   subj = '11043'; % WST
 %   subj = '11046'; % DHB
-subj = '11043';
+subj = '11046';
 switch (subj)
     case {'11043' '11046'}
         dataDate = '20200131';
@@ -24,53 +44,82 @@ end
 %
 % To normalize, or not to normalize? Select false to work with the raw
 % modulations, true to normalize.
-normFlag = false;
+norm = false;
+if (norm)
+    normStr = 'norm';
+else
+    normStr = 'notnorm';
+end
 
-%% Correct for guessing
-correctForGuessing = true;
+%% Correct for guessing?
+corrGuess = true;
+if (corrGuess)
+    corrGuessStr = 'corrguess';
+else
+    corrGuessStr = 'notcorrguess';
+end
 
-% Set up directories
+%% Refelct data so that stim1 and stim2 are treated as symmetric?
+refl = false;
+if (refl)
+    reflStr = 'refl';
+else
+    reflStr = 'norefl';
+end
+
+%% Set up directories
+analysisSubDir = sprintf('%s_%s_%s',normStr,corrGuessStr,reflStr);
 dataBaseDir = getpref(baseProject,'dataDir');
 analysisBaseDir = getpref(baseProject,'analysisDir');
 dataDir = fullfile(dataBaseDir,subProject,subj,dataDate,'Separation_1');
-analysisDir = fullfile(analysisBaseDir,subProject,subj,dataDate,'Separation_1');
+analysisDir = fullfile(analysisBaseDir,subProject,subj,dataDate,'Separation_1',analysisSubDir);
 if (~exist(analysisDir,'dir'))
     mkdir(analysisDir);
 end
 
-% Get list of .mat files for the data we're analyzing
+%% Get list of .mat files for the data we're analyzing
 dataFiles = dir(fullfile(dataDir,'*DetectionData.mat'));
 if isempty(dataFiles)
     error('No data files found');
 end
 
-%% Get the data
-stimulusModulations = [];
+%% Get the data.
+%
+% First entry is top, second is bottom
+stimulusContrasts = [];
 responseVector = [];
 for fileNum = 1:length(dataFiles)
     % Load individual data files
     expDataTemp = load(fullfile(dataFiles(fileNum).folder, dataFiles(fileNum).name));
     
+    % Get stimulus contrast, without symmeterizing.  First entry of data is
+    % top stimulus if the fifth column is 2, but the other way around if
+    % fifth column is 4.
+    stimulusContrastsIn = (expDataTemp.testSeq(:,1:2)-expDataTemp.CFG.backgroundIntensity)/expDataTemp.CFG.backgroundIntensity;
+    flipIndex = find(expDataTemp.testSeq(:,5) == 4);
+    stimulusContrastsIn(flipIndex,:) = stimulusContrastsIn(flipIndex,[2 1]);
+
     % Add to output matrix/vector
-    stimulusModulations = [stimulusModulations; expDataTemp.testSeq(:,1:2)-expDataTemp.CFG.backgroundIntensity];
+    stimulusContrasts = [stimulusContrasts; stimulusContrastsIn];
     responseVector = [responseVector; expDataTemp.YesNoResponseMatrix]; %#ok<*AGROW>
 end
 
 %% Normalize if desired
-stimulusModulationsNormalized = zeros(size(stimulusModulations)); % Pre-allocate
-if normFlag == 1    
-    decNormFactor = max(abs(unique(stimulusModulations(stimulusModulations<0))));
-    incNormFactor = max(unique(stimulusModulations(stimulusModulations>0)));
+stimulusModulationsNormalized = zeros(size(stimulusContrasts)); % Pre-allocate
+if norm == 1    
+    decNormFactor = max(abs(unique(stimulusContrasts(stimulusContrasts<0))));
+    incNormFactor = max(unique(stimulusContrasts(stimulusContrasts>0)));
 else
     decNormFactor = 1;
     incNormFactor = 1;
 end
-stimulusModulationsNormalized(stimulusModulations>0) = stimulusModulations(stimulusModulations>0)./incNormFactor;
-stimulusModulationsNormalized(stimulusModulations<0) = stimulusModulations(stimulusModulations<0)./decNormFactor;
+stimulusModulationsNormalized(stimulusContrasts>0) = stimulusContrasts(stimulusContrasts>0)./incNormFactor;
+stimulusModulationsNormalized(stimulusContrasts<0) = stimulusContrasts(stimulusContrasts<0)./decNormFactor;
 
-% Compute stimulus angle in 2-D space.
-stimAngles = zeros(length(stimulusModulations),1);
-for n = 1:length(stimAngles)
+% Compute stimulus angles in 2-D space. Let's keep angles greater than or
+% equal to 0 and less than 360, just to have a clear convention. 
+stimAnglesRaw = zeros(length(stimulusContrasts),1);
+for n = 1:length(stimAnglesRaw)
     % Figure out whether each stimulus is increment, decrement, or blank.
     if stimulusModulationsNormalized(n,1) < 0
         stim1 = 'Dec';
@@ -87,28 +136,42 @@ for n = 1:length(stimAngles)
         stim2 = 'Blank';
     end
     
-    % Get angle.  Blank comes back as NaN
-    stimAnglesRaw(n) = round(atand(stimulusModulationsNormalized(n,2)./stimulusModulationsNormalized(n,1)));
-    stimAngles(n) = stimAnglesRaw(n);
-    
-    if stimAngles(n) == 45
-        if strcmp(stim1,'Dec') && strcmp(stim2, 'Dec')
-            stimAngles(n) = stimAngles(n)+180;
-        end
-    end
-    
-    if stimAngles(n) == -45
-        stimAngles(n) = 360-45;
-    end
-    
-    if strcmp(stim1, 'Dec') && strcmp(stim2, 'Blank')
-        stimAngles(n) = 270;
+    % Get angle.  Set blank as NaN 
+    stimAnglesRaw(n) = round(atan2d(stimulusModulationsNormalized(n,2),stimulusModulationsNormalized(n,1)));
+    if (strcmp(stim1,'Blank') && strcmp(stim2,'Blank'))
+        stimAnglesRaw(n) = NaN;
     end
 end
+while (any(stimAnglesRaw < 0))
+    stimAnglesRaw(stimAnglesRaw < 0) = stimAnglesRaw(stimAnglesRaw < 0) + 360;
+end
+while (any(stimAnglesRaw >= 360))
+    stimAnglesRaw(stimAnglesRaw >= 360) = stimAnglesRaw(stimAnglesRaw >= 360) - 360;
+end
+
+%% Reflect around 45 degree line if desired
+stimAngles = stimAnglesRaw;
+if (refl)
+    for n = 1:length(stimAnglesRaw)
+        if (stimAnglesRaw(n) > 45 && stimAnglesRaw(n) < 225)
+            delta = stimAnglesRaw(n) - 45;
+            stimAngles(n) = 45 - delta;
+        end
+    end
+end
+while (any(stimAngles < 0))
+    stimAngles(stimAngles < 0) = stimAngles(stimAngles < 0) + 360;
+end
+while (any(stimAngles >= 360))
+    stimAngles(stimAngles >= 360) = stimAngles(stimAngles >= 360) - 360;
+end
+% figure; 
+% plot(stimAnglesRaw,stimAngles,'ro','MarkerFaceColor','r','MarkerSize',8);
 
 %% Compute the false positive rate
+%
 % Values of 3 and 1 are from the gamepad controller used in the experiment
-yesVal = 3; % From gamepad
+yesVal = 3;
 noVal = 1;
 numCatchTrials = length(responseVector(mean(stimulusModulationsNormalized,2)==0));
 catchResponses = responseVector(mean(stimulusModulationsNormalized,2)==0);
@@ -127,35 +190,46 @@ modulationVectorLengths = sqrt(stimulusModulationsNormalized(:,1).^2 + stimulusM
 paramsFitted_Individual = nan(length(stimAngleList),4);
 
 % For PF evaluation
-xEval = linspace(0,1,1000);
+xEval = linspace(0,10.^0.5,1000);
 
 % Plot into this figure
 figure; hold on;
 set(gcf, 'Color', 'w', 'Units', 'inches', 'Position', [1 1 12 4]);
 
+% Go through all angles
 for angleNum = 1:length(stimAngleList)
-    fitInd = find(stimAngles==stimAngleList(angleNum));
-    
-    angleResponses = responseVector(fitInd);
-    angleModulations = modulationVectorLengths(fitInd);
+    % Get data for this angle
+    fitIndex = find(stimAngles==stimAngleList(angleNum));
+    fitResponses = responseVector(fitIndex);
+    fitModulationVectorLengths = modulationVectorLengths(fitIndex);
+    if (angleNum == 1)
+        numberUniqueVectorLengths = length(unique(fitModulationVectorLengths));
+    else
+        if (length(unique(fitModulationVectorLengths)) ~= numberUniqueVectorLengths)
+            error('Assumption of same number of stimulus levels in each director violated');
+        end
+    end
     
     % Group data (not necessary but makes for easier plotting)
-    stimLevels(angleNum,:) = [0.001 unique(angleModulations)']; %#ok<SAGROW>
+    % 
+    % Inserting 0.001 as value for catch trials
+    stimLevels(angleNum,:) = [0.001 unique(fitModulationVectorLengths)']; %#ok<SAGROW>
     outOfNum(angleNum,:) = zeros(1,size(stimLevels,2)); %#ok<SAGROW>
     numPos(angleNum,:) = zeros(1,size(stimLevels,2)); %#ok<SAGROW>
     
-    for j = 1:length(stimLevels)
+    % Build up data for each fit
+    for j = 1:length(stimLevels(angleNum,:))
         if j == 1 % Catch trial
             outOfNum(angleNum,j) = numCatchTrials;
             numPos(angleNum,j) = numCatchPos;
         else
-            tempRespVector = angleResponses(angleModulations==stimLevels(angleNum,j));
+            tempRespVector = fitResponses(fitModulationVectorLengths==stimLevels(angleNum,j));
             outOfNum(angleNum, j) = length(tempRespVector);
             numPos(angleNum, j) = length(tempRespVector(tempRespVector==yesVal));
         end
     end
     
-    if (correctForGuessing)
+    if (corrGuess)
         pFA = numCatchPos/numCatchTrials;
         pHit(angleNum,:) = numPos(angleNum,:)./outOfNum(angleNum,:);
         pFACorrect = CorrectForGuessing(pFA,pFA);
@@ -185,7 +259,7 @@ end
 
 % Finish up plot
 legend(num2str(stimAngleList), 'Location', 'NorthWest')
-xlim([-1.5 0])
+xlim([-1 0.5])
 ylim([0 1]);
 axis square
 xlabel('Log10 modulation intensity (au)', 'FontSize', 14);
@@ -207,7 +281,7 @@ for angleNum = 1:length(stimAngleList)
         'MarkerEdgeColor', 'none', 'MarkerSize', 10, 'HandleVisibility', 'off');
 end
 legend(num2str(stimAngleList), 'Location', 'NorthWest')
-xlim([-1.5 0])
+xlim([-1 0.5])
 ylim([0 1]);
 title('Slopes constrained');
 axis square;
@@ -216,10 +290,11 @@ ylabel('Prop seen', 'FontSize', 14);
 
 %% Evaluate fit a specific prop seen and plot on 2-D modulation space
 ax3 = subplot(1,3,3); hold on;
-plot([0 0], [-1 1], 'k-', 'LineWidth', 1.5);
-plot( [-1 1],[0 0], 'k-', 'LineWidth', 1.5);
+plot([0 0], [-1.5 1.5], 'k-', 'LineWidth', 1.5);
+plot( [-1.5 1.5],[0 0], 'k-', 'LineWidth', 1.5);
 
-% This is how I evaluate the PF and convert back to x,y coordinates for ellipse fitting
+%% Evaluate the PF and convert back to x,y coordinates for ellipse fitting
+%
 % First, round to the nearest .1 above the guess rate (code won't be happy if you
 % try to evaluate the PF for prop seen below the lower asymptote)
 propEvalStart = ceil(10*falsePosProp)/10; 
@@ -242,6 +317,7 @@ end
 xlabel('Stimulus 1 modulation (normalized)', 'FontSize', 14);
 ylabel('Stimulus 2 modulation (normalized)', 'FontSize', 14);
 axLim = round(max(stimulusModulationsNormalized(:)),1); % Round to nearest 0.1
+axLim = 1.5;
 xlim([-axLim axLim]);
 ylim([-axLim axLim]);
 axis square;
@@ -264,8 +340,8 @@ set(ax2, 'Position', [0.4 0.110 0.3347.*.66 0.8150])
 set(ax3, 'Position', [0.7 0.110 0.3347*.66 0.8150])
 
 %% Save fit data to mat file
-save(fullfile(analysisDir,sprintf('%s_%d_%d_incDecFits_ConstrainedSlope.mat', subj,normFlag,correctForGuessing)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');
-print(gcf, fullfile(analysisDir,sprintf('%s_%d_%d_incDecFits_ConstrainedSlope.tiff', subj,normFlag,correctForGuessing)), '-dtiff');
+save(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.mat', subj)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');
+print(gcf, fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.tiff', subj)), '-dtiff');
 
 %% Correct for guessing
 function [pCorrected] = CorrectForGuessing(pHit,pFA)
