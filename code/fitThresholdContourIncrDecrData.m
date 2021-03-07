@@ -1,4 +1,4 @@
-function fitThresholdContourToIncrDecrData(options)
+function fitThresholdContourIncrDecrData(options)
 % fitThresholdContourIncrDecrData
 %
 % Script to combine data from inc/dec experiments and fit PFs to various
@@ -21,12 +21,14 @@ function fitThresholdContourToIncrDecrData(options)
 %      'lockAngle'  - Boolean. Lock ellipse angle to be oriented with axes?
 %                     Default false.
 %      'constraintedSlopeFits' - Boolean. Fit data with PF constrained
-%                     slopes. Default false.
+%                     slopes. Default true
 %      'scaleDecr'  - Boolean. Scale decrement thresholds to match
 %                     increments. Default false.
-%      
+%      'lockSlope'  - Boolean. Lock the slope of the linear fit to -1.
+%                     Default true.
+%
 
-%% Pick up optional arguments 
+%% Pick up optional arguments
 arguments
     options.subj string = '11043';
     options.dataDate string = '20200131';
@@ -34,10 +36,12 @@ arguments
     options.condition string = 'Separation_1';
     options.norm (1,1) logical = false;
     options.corrGuess (1,1) logical = true;
-    options.refl (1,1) logical = false;
+    options.reflIn (1,1) logical = false;
+    options.reflOut (1,1) logical = false;
     options.lockAngle (1,1) logical = false;
-    options.constrainedSlopeFits (1,1) logical = false;
+    options.constrainedSlopeFits (1,1) logical = true;
     options.scaleDecr (1,1) logical = false;
+    options.lockSlope (1,1) logical = true;
 end
 
 %% Housekeeping
@@ -138,7 +142,7 @@ end
 % First, round to the nearest .1 above the guess rate (code won't be happy if you
 % try to evaluate the PF for prop seen below the lower asymptote)
 PF = @PAL_Logistic;
-propEvalStart = ceil(10*theData.falsePosProp)/10; 
+propEvalStart = ceil(10*theData.falsePosProp)/10;
 propSeen_Fit = propEvalStart:.1:.9;
 modLevels_PF = nan(size(theData.paramsFitted_Multi,1), length(propSeen_Fit));
 for n = 1:size(theData.paramsFitted_Multi,1)
@@ -148,7 +152,7 @@ end
 %% Get increment and decrement thresholds
 incrThresh = [];
 decrThresh = [];
-for pp = 1:length(theData.stimAngleList)       
+for pp = 1:length(theData.stimAngleList)
     if (theData.stimAngleList(pp) == 0)
         incrThresh = [incrThresh abs(cosd(theData.stimAngleList(pp)).*modLevels_PF(pp,:))];
     elseif (theData.stimAngleList(pp) == 90)
@@ -157,7 +161,7 @@ for pp = 1:length(theData.stimAngleList)
         decrThresh = [decrThresh abs(cosd(theData.stimAngleList(pp)).*modLevels_PF(pp,:))];
     elseif (theData.stimAngleList(pp) == 270)
         decrThresh = [decrThresh abs(sind(theData.stimAngleList(pp)).*modLevels_PF(pp,:))];
-    end      
+    end
 end
 incrThresh = mean(incrThresh);
 decrThresh = mean(decrThresh);
@@ -167,57 +171,47 @@ decrThresh = mean(decrThresh);
 % As we do this, we also reflect the symmetric data points,
 % which makes the plots look better and also lets us
 % make some didactically useful plots.
+%
+% The angles are nominal if you scale the decrements to match the
+% increments, but they are only used to pull out points for explanatory
+% plots so this is OK.
 index = 1;
 for pp = 1:length(theData.stimAngleList)
     % Get data in x,y form
-    xPlot_Fit(index,:) = cosd(theData.stimAngleList(pp)).*modLevels_PF(pp,:);
-    yPlot_Fit(index,:) = sind(theData.stimAngleList(pp)).*modLevels_PF(pp,:);
-    angles_Fit(index) = theData.stimAngleList(pp);
+    stimXDataFit(index,:) = cosd(theData.stimAngleList(pp)).*modLevels_PF(pp,:);
+    stimYDataFit(index,:) = sind(theData.stimAngleList(pp)).*modLevels_PF(pp,:);
+    stimAnglesFit(index) = theData.stimAngleList(pp);
     index = index+1;
     
     % This does the reflection.  Double up points on diagonal so that each
     % datum counts same number of times in the fit.
     if (options.reflOut)
-        error('Need to fix reflection up here');
-        if (theData.stimAngleList(pp) == 0)
-            xPlot_Fit(index,:) = cosd(90).*modLevels_PF(pp,:);
-            yPlot_Fit(index,:) = sind(90).*modLevels_PF(pp,:);
-            angles_Fit(index) = 90;
-            index = index+1;
-        elseif (theData.stimAngleList(pp) == 270)
-            xPlot_Fit(index,:) = cosd(180).*modLevels_PF(pp,:);
-            yPlot_Fit(index,:) = sind(180).*modLevels_PF(pp,:);
-            angles_Fit(index) = 180;  
-            index = index+1;
-        elseif (theData.stimAngleList(pp) == 45)
-            xPlot_Fit(index,:) = cosd(45).*modLevels_PF(pp,:);
-            yPlot_Fit(index,:) = sind(45).*modLevels_PF(pp,:);
-            angles_Fit(index) = 45;
-            index = index+1;
-        elseif (theData.stimAngleList(pp) == 225)
-            xPlot_Fit(index,:) = cosd(225).*modLevels_PF(pp,:);
-            yPlot_Fit(index,:) = sind(225).*modLevels_PF(pp,:);
-            angles_Fit(index) = 225;
-            index = index+1;
-        elseif (theData.stimAngleList(pp) < 0)
-            xPlot_Fit(index,:) = cosd(90-theData.stimAngleList(pp)).*modLevels_PF(pp,:);
-            yPlot_Fit(index,:) = sind(90-theData.stimAngleList(pp)).*modLevels_PF(pp,:);
-            angles_Fit(index) = 90-theData.stimAngleList(pp);
-            index = index+1;
+        stimXDataFit(index,:) = stimYDataFit(index-1,:);
+        stimYDataFit(index,:) = stimXDataFit(index-1,:);
+        if (stimXDataFit(index,end) == 0 & stimYDataFit(index,end) == 0)
+            error('Angle undefined the way we are computing it. Rethink reflOut logic.')
         end
+        stimAnglesFit(index) = atan2d(stimYDataFit(index,end),stimXDataFit(index,end));
+        index = index+1;
     end
+end
+while (any(stimAnglesFit < 0))
+    stimAnglesFit(stimAnglesFit < 0) = stimAnglesFit(stimAnglesFit < 0) + 360;
+end
+while (any(stimAnglesFit >= 360))
+    stimAnglesFit(stimAnglesFit >= 360) = stimAnglesFit(stimAnglesFit >= 360) - 360;
 end
 
 %% Make increments and decrements same scale, if desired
 if (options.scaleDecr)
     incrDecrScaleFactor = incrThresh./decrThresh;
-    for pp = 1:size(xPlot_Fit,1)
-        for jj = 1:size(xPlot_Fit,2)
-            if (xPlot_Fit(pp,jj) < 0)
-                xPlot_Fit(pp,jj) = incrDecrScaleFactor(jj)*xPlot_Fit(pp,jj);
+    for pp = 1:size(stimXDataFit,1)
+        for jj = 1:size(stimXDataFit,2)
+            if (stimXDataFit(pp,jj) < 0)
+                stimXDataFit(pp,jj) = incrDecrScaleFactor*stimXDataFit(pp,jj);
             end
-            if (yPlot_Fit(pp,jj) < 0)
-                yPlot_Fit(pp,jj) = incrDecrScaleFactor(jj)*yPlot_Fit(pp,jj);
+            if (stimYDataFit(pp,jj) < 0)
+                stimYDataFit(pp,jj) = incrDecrScaleFactor*stimYDataFit(pp,jj);
             end
         end
     end
@@ -234,14 +228,14 @@ propsSeen = 0.70;
 if (length(propsSeen) > 1)
     for pp = 1:length(propsSeen)
         whichCol = find(propSeen_Fit == propsSeen(pp));
-        xData = xPlot_Fit(:,whichCol)';
-        yData = yPlot_Fit(:,whichCol)';
+        xData = stimXDataFit(:,whichCol)';
+        yData = stimYDataFit(:,whichCol)';
         theDataToFit{pp} = [xData ; yData];
     end
 else
     whichCol = find(propSeen_Fit == propsSeen);
-    xData = xPlot_Fit(:,whichCol)';
-    yData = yPlot_Fit(:,whichCol)';
+    xData = stimXDataFit(:,whichCol)';
+    yData = stimYDataFit(:,whichCol)';
     theDataToFit = [xData ; yData];
 end
 
@@ -256,7 +250,7 @@ if (iscell(theDataToFit))
         plot(theDataToFit{pp}(1,:),theDataToFit{pp}(2,:),[theColors(pp) 'o'],'MarkerFaceColor',theColors(pp),'MarkerSize',12);
     end
 else
-    plot(theDataToFit(1,:),theDataToFit(2,:),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
+    plot(theDataToFit(1,:),theDataToFit(2,:),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
 end
 
 %% Fit.
@@ -280,11 +274,11 @@ if (options.lockAngle)
     end
 else
     if (iscell(theDataToFit))
-        for cc = 1:length(theDataToFit)  
+        for cc = 1:length(theDataToFit)
             fprintf('Major axis length: %0.2f, minor axis length: %0.2f, major axis angle %0.1f deg\n',2/ellParams{cc}(1),2/ellParams{cc}(2),ellParams{cc}(3));
         end
     else
-        fprintf('Major axis length: %0.2f, minor axis length: %0.2f, major axis angle %0.1f deg\n',2/ellParams(1),2/ellParams(2),ellParams(3));   
+        fprintf('Major axis length: %0.2f, minor axis length: %0.2f, major axis angle %0.1f deg\n',2/ellParams(1),2/ellParams(2),ellParams(3));
     end
 end
 
@@ -319,13 +313,13 @@ print(theEllipseFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_%sEllipse.tiff', 
 %
 % Just incremental stimulus one
 theIncrFig = figure; clf; hold on
-index = find(angles_Fit == 0);
+index = find(stimAnglesFit == 0);
 if (iscell(theDataToFit))
     for pp = 1:length(propsSeen)
         plot(theDataToFit{pp}(1,index),theDataToFit{pp}(2,index),[theColors(pp) 'o'],'MarkerFaceColor',theColors(pp),'MarkerSize',12);
     end
 else
-    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
+    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
 end
 plot([-theLim theLim],[0 0],'k:','LineWidth',1);
 plot([0 0],[-theLim theLim],'k:','LineWidth',1);
@@ -337,13 +331,13 @@ ylabel('Contrast 2');
 print(theIncrFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_%sSingleIncr.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Both incremental stimuli
-index = find(angles_Fit == 90);
+index = find(stimAnglesFit == 90);
 if (iscell(theDataToFit))
     for pp = 1:length(propsSeen)
         plot(theDataToFit{pp}(1,index),theDataToFit{pp}(2,index),[theColors(pp) 'o'],'MarkerFaceColor',theColors(pp),'MarkerSize',12);
     end
 else
-    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
+    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
 end
 print(theIncrFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_DoubleIncr.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 theIncrFig1 = theIncrFig.copy;
@@ -353,7 +347,7 @@ figure(theIncrFig);
 neededAngles = [0 90];
 index = [];
 for aa = 1:length(neededAngles)
-    index = [index find(angles_Fit == neededAngles(aa))];
+    index = [index find(stimAnglesFit == neededAngles(aa))];
 end
 x = theDataToFit(1,index)';
 y = theDataToFit(2,index)';
@@ -369,19 +363,19 @@ if (iscell(theDataToFit))
         plot(theDataToFit{pp}(1,index),theDataToFit{pp}(2,index),[theColors(pp) 'o'],'MarkerFaceColor',theColors(pp),'MarkerSize',12);
     end
 else
-    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
+    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
 end
 print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrWithDoubleIncrLine.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Add incr-incr
 figure(theIncrFig1);
-index = find(angles_Fit == 45);
+index = find(stimAnglesFit == 45);
 if (iscell(theDataToFit))
     for pp = 1:length(propsSeen)
         plot(theDataToFit{pp}(1,index),theDataToFit{pp}(2,index),[theColors(pp) 'o'],'MarkerFaceColor',theColors(pp),'MarkerSize',12);
     end
 else
-    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
+    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
 end
 print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_Incr.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
@@ -389,11 +383,16 @@ print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_Incr.tiff', options
 neededAngles = [0 45 90];
 index = [];
 for aa = 1:length(neededAngles)
-    index = [index find(angles_Fit == neededAngles(aa))];
+    index = [index find(stimAnglesFit == neededAngles(aa))];
 end
 x = theDataToFit(1,index)';
 y = theDataToFit(2,index)';
-lineParams = [x ones(size(x))]\y;
+if (options.lockSlope)
+    slope = -1;
+    lineParams = [slope ones(size(x))\(y-(slope*x))]';
+else
+    lineParams = [x ones(size(x))]\y;
+end
 linePlotX = linspace(-theLim,theLim,100)';
 linePlotY = [linePlotX ones(size(linePlotX))]*lineParams;
 plot(linePlotX,linePlotY,'r','LineWidth',3);
@@ -403,14 +402,14 @@ print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrWithBestIncrLin
 neededAngles = [180 225 270];
 index = [];
 for aa = 1:length(neededAngles)
-    index = [index find(angles_Fit == neededAngles(aa))];
+    index = [index find(stimAnglesFit == neededAngles(aa))];
 end
 if (iscell(theDataToFit))
     for pp = 1:length(propsSeen)
         plot(theDataToFit{pp}(1,index),theDataToFit{pp}(2,index),[theColors(pp) 'o'],'MarkerFaceColor',theColors(pp),'MarkerSize',12);
     end
 else
-    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
+    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
 end
 print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrAndDecrWithBestIncrLine.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
@@ -418,23 +417,28 @@ print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrAndDecrWithBest
 neededAngles = [180 225 270];
 index = [];
 for aa = 1:length(neededAngles)
-    index = [index find(angles_Fit == neededAngles(aa))];
+    index = [index find(stimAnglesFit == neededAngles(aa))];
 end
 x = theDataToFit(1,index)';
 y = theDataToFit(2,index)';
-lineParams = [x ones(size(x))]\y;
+if (options.lockSlope)
+    slope = -1;
+    lineParams = [slope ones(size(x))\(y-(slope*x))]';
+else
+    lineParams = [x ones(size(x))]\y;
+end
 linePlotX = linspace(-theLim,theLim,100)';
 linePlotY = [linePlotX ones(size(linePlotX))]*lineParams;
 plot(linePlotX,linePlotY,'r','LineWidth',3);
 print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrAndDecrWithBestIncrAndDecrLines.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
 
 %% Add the critical incr-decr points
-index = find((angles_Fit > 90 & angles_Fit < 180) | (angles_Fit > 270 & angles_Fit < 360));
+index = find((stimAnglesFit > 90 & stimAnglesFit < 180) | (stimAnglesFit > 270 & stimAnglesFit < 360));
 if (iscell(theDataToFit))
     for pp = 1:length(propsSeen)
         plot(theDataToFit{pp}(1,index),theDataToFit{pp}(2,index),[theColors(pp) 'o'],'MarkerFaceColor',theColors(pp),'MarkerSize',12);
     end
 else
-    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12); 
+    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
 end
 print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_AllDataWithBestIncrAndDecrLines.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
