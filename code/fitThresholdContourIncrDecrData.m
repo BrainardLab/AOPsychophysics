@@ -4,8 +4,6 @@ function fitThresholdContourIncrDecrData(options)
 % Script to combine data from inc/dec experiments and fit PFs to various
 % axes in the 2D stimulus space
 %
-% See also: FitEllipseQ, PointsOnEllipseQ, EllipsoidMatricesGenerate.
-
 %   Optional key/value pairs
 %      'subj'       - String. Subject ID.  Default '11043';
 %      'dataDate'   - String. Date data collected. Default '20200131'.
@@ -18,8 +16,6 @@ function fitThresholdContourIncrDecrData(options)
 %      'reflIn'     - Boolean. Read fits that treat stim1 and stim2 as
 %                     symmetric. Default false.
 %      'reflOut'    - Boolean. Reflect data before analysis. Default false.
-%      'lockAngle'  - Boolean. Lock ellipse angle to be oriented with axes?
-%                     Default false.
 %      'constraintedSlopeFits' - Boolean. Fit data with PF constrained
 %                     slopes. Default true
 %      'scaleDecr'  - Boolean. Scale decrement thresholds to match
@@ -27,6 +23,11 @@ function fitThresholdContourIncrDecrData(options)
 %      'lockSlope'  - Boolean. Lock the slope of the linear fit to -1.
 %                     Default true.
 %
+% See also: FitEllipseQ, PointsOnEllipseQ, EllipsoidMatricesGenerate.
+%
+
+% History
+%   03/07/21  dhb  Cleaning up.
 
 %% Pick up optional arguments
 arguments
@@ -38,7 +39,6 @@ arguments
     options.corrGuess (1,1) logical = true;
     options.reflIn (1,1) logical = false;
     options.reflOut (1,1) logical = false;
-    options.lockAngle (1,1) logical = false;
     options.constrainedSlopeFits (1,1) logical = true;
     options.scaleDecr (1,1) logical = false;
     options.lockSlope (1,1) logical = true;
@@ -49,41 +49,22 @@ close all
 baseProject = 'AOPsychophysics';
 subProject = options.subProject;
 
-%% Parameters
-%
-% By setting lockAngle to true, you get ellipses with axes aligned with
-% x and y axis.
-if (options.lockAngle)
-    lockAngleStr = 'lockAngle';
-else
-    lockAngleStr = 'noLockAngle';
-end
-
-%% Scale decrement thresholds to be the same as increments?
+%% Set input/output name strings
 if (options.scaleDecr)
     scaleDecrStr = 'scaleDecr';
 else
     scaleDecrStr = 'noScaleDecr';
 end
-
-%% Normalize?
-%
-% To normalize, or not to normalize? Select false to work with the raw
-% modulations, true to normalize.
 if (options.norm)
     normStr = 'norm';
 else
     normStr = 'notnorm';
 end
-
-%% Correct for guessing?
 if (options.corrGuess)
     corrGuessStr = 'corrguess';
 else
     corrGuessStr = 'notcorrguess';
 end
-
-%% Reflect data so that stim1 and stim2 are treated as symmetric?
 if (options.reflIn)
     reflInStr = 'refl';
 else
@@ -130,6 +111,10 @@ end
 analysisSubDir = sprintf('%s_%s_%s',normStr,corrGuessStr,reflInStr);
 analysisBaseDir = getpref(baseProject,'analysisDir');
 analysisDir = fullfile(analysisBaseDir,subProject,options.subj,options.dataDate,options.condition,analysisSubDir);
+analysisOutDir = fullfile(analysisDir,sprintf('%s_%s',scaleDecrStr,reflOutStr));
+if (~exist(analysisOutDir,'dir'))
+    mkdir(analysisOutDir);
+end
 
 %% Read output of psychometric fitting
 theData = load(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.mat',options.subj)));
@@ -223,21 +208,11 @@ end
 % Otherwise just a regular array. The code should work even with a cell
 % array of length 1, but doing it like this lets us test FitEllipseQ a
 % little more thorougly.
-% propsSeen = [0.50 0.70 0.90];
 propsSeen = 0.70;
-if (length(propsSeen) > 1)
-    for pp = 1:length(propsSeen)
-        whichCol = find(propSeen_Fit == propsSeen(pp));
-        xData = stimXDataFit(:,whichCol)';
-        yData = stimYDataFit(:,whichCol)';
-        theDataToFit{pp} = [xData ; yData];
-    end
-else
-    whichCol = find(propSeen_Fit == propsSeen);
-    xData = stimXDataFit(:,whichCol)';
-    yData = stimYDataFit(:,whichCol)';
-    theDataToFit = [xData ; yData];
-end
+whichCol = find(propSeen_Fit == propsSeen);
+xData = stimXDataFit(:,whichCol)';
+yData = stimYDataFit(:,whichCol)';
+theDataToFit = [xData ; yData];
 
 %% Plot the points
 theColors = ['r' 'k' 'b' 'b' 'y' 'c'];
@@ -245,60 +220,28 @@ if (length(propsSeen) > length(theColors))
     error('Need to specify more plot colors, fewer propsSeen, or fix code to handle');
 end
 theEllipseFig = figure; clf; hold on;
-if (iscell(theDataToFit))
-    for pp = 1:length(propsSeen)
-        plot(theDataToFit{pp}(1,:),theDataToFit{pp}(2,:),[theColors(pp) 'o'],'MarkerFaceColor',theColors(pp),'MarkerSize',12);
-    end
-else
-    plot(theDataToFit(1,:),theDataToFit(2,:),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
-end
+plot(theDataToFit(1,:),theDataToFit(2,:),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
 
-%% Fit.
-[ellParams,A,Ainv,Q] = FitEllipseQ(theDataToFit,'lockAngleAt0',options.lockAngle,'errorScalar',errorScalar,'initialParams',[incrThresh(end) decrThresh(end) 45]);
+%% Fit ellipse
+%
+% The work of generating the points to plot is done by PointsOnEllipseQ.
+[ellParams,A,Ainv,Q] = FitEllipseQ(theDataToFit,'lockAngleAt0',false,'errorScalar',errorScalar,'initialParams',[incrThresh(end) decrThresh(end) 45]);
+nCirclePoints = 100;
+circlePoints = UnitCircleGenerate(nCirclePoints);
+ellPoints = PointsOnEllipseQ(Q,circlePoints);
 
-%% Print ellipse parameters
+% Print ellipse parameters
 %
 % Give full length of axes, not radius equivalent (which is why it is 2 in
 % the numerator of the numbers below, not 1).  Printout is a little
 % different depending on whether angle is locked or not.
-%
-% There is a vestigal printout call if you only fit one ellipse and don't
-% put it in a cell array.
-if (options.lockAngle)
-    if (iscell(theDataToFit))
-        for cc = 1:length(theDataToFit)
-            fprintf('x-axis length: %0.2f, y-axis length: %0.2f, major axis angle %0.1f deg\n',2/ellParams{cc}(1),2/ellParams{cc}(2),ellParams{cc}(3));
-        end
-    else
-        fprintf('x-axis length: %0.2f, y-axis length: %0.2f, major axis angle %0.1f deg\n',2/ellParams(1),2/ellParams(2),ellParams(3));
-    end
-else
-    if (iscell(theDataToFit))
-        for cc = 1:length(theDataToFit)
-            fprintf('Major axis length: %0.2f, minor axis length: %0.2f, major axis angle %0.1f deg\n',2/ellParams{cc}(1),2/ellParams{cc}(2),ellParams{cc}(3));
-        end
-    else
-        fprintf('Major axis length: %0.2f, minor axis length: %0.2f, major axis angle %0.1f deg\n',2/ellParams(1),2/ellParams(2),ellParams(3));
-    end
-end
+fprintf('Major axis length: %0.2f, minor axis length: %0.2f, major axis angle %0.1f deg\n',2/ellParams(1),2/ellParams(2),ellParams(3));
 
-%% Add ellipses to plot
-%
-% The work of generating the points to plot is done by PointsOnEllipseQ.
-nCirclePoints = 100;
-circlePoints = UnitCircleGenerate(nCirclePoints);
-ellPoints = PointsOnEllipseQ(Q,circlePoints);
-if (iscell(ellPoints))
-    titleStr = sprintf('Subject %s, critera',options.subj);
-    for cc = 1:length(ellPoints)
-        plot(ellPoints{cc}(1,:),ellPoints{cc}(2,:),theColors(cc),'LineWidth',2);
-        titleStr = [titleStr sprintf(' %d%%',round(100*propsSeen(cc)))];
-    end
-    title(titleStr);
-else
-    plot(ellPoints(1,:),ellPoints(2,:),'r','LineWidth',2);
-    title(sprintf('Subject %s, criterion %d%%',options.subj,round(100*propsSeen)));
-end
+% Add ellipse to plot
+theEllipseFig1 = theEllipseFig.copy;
+figure(theEllipseFig);
+plot(ellPoints(1,:),ellPoints(2,:),'r','LineWidth',2);
+title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
 theLim = 2;
 plot([-theLim theLim],[0 0],'k:','LineWidth',1);
 plot([0 0],[-theLim theLim],'k:','LineWidth',1);
@@ -307,7 +250,45 @@ ylim([-theLim theLim]);
 axis('square');
 xlabel('Contrast 1')
 ylabel('Contrast 2');
-print(theEllipseFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_%sEllipse.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+print(theEllipseFig, fullfile(analysisOutDir,sprintf('%s_EllipseAllData.tiff', options.subj)), '-dtiff');
+
+%% Fit ellipse with angle locked to just pure increment and decrement data
+neededAngles = [0 90 180 270];
+index = [];
+for aa = 1:length(neededAngles)
+    index = [index find(stimAnglesFit == neededAngles(aa))];
+end
+[ellParams0,A0,Ainv0,Q0] = FitEllipseQ(theDataToFit(:,index),'lockAngleAt0',true,'errorScalar',errorScalar,'initialParams',[incrThresh(end) decrThresh(end) 0]);
+ellPoints0 = PointsOnEllipseQ(Q0,circlePoints);
+
+% Plot
+theEllipseFig0 = figure; clf; hold on;
+plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
+plot(ellPoints0(1,:),ellPoints0(2,:),'r','LineWidth',2);
+title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
+theLim = 2;
+plot([-theLim theLim],[0 0],'k:','LineWidth',1);
+plot([0 0],[-theLim theLim],'k:','LineWidth',1);
+xlim([-theLim theLim]);
+ylim([-theLim theLim]);
+axis('square');
+xlabel('Contrast 1')
+ylabel('Contrast 2');
+print(theEllipseFig0, fullfile(analysisOutDir,sprintf('%s_Ellipse0FitData.tiff', options.subj)), '-dtiff');
+
+% Add to plot of all data
+figure(theEllipseFig1);
+plot(ellPoints0(1,:),ellPoints0(2,:),'r','LineWidth',2);
+title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
+theLim = 2;
+plot([-theLim theLim],[0 0],'k:','LineWidth',1);
+plot([0 0],[-theLim theLim],'k:','LineWidth',1);
+xlim([-theLim theLim]);
+ylim([-theLim theLim]);
+axis('square');
+xlabel('Contrast 1')
+ylabel('Contrast 2');
+print(theEllipseFig1, fullfile(analysisOutDir,sprintf('%s_Ellipse0AllData.tiff', options.subj)), '-dtiff');
 
 %% Build up some explanatory plots
 %
@@ -328,7 +309,8 @@ ylim([-theLim theLim]);
 axis('square');
 xlabel('Contrast 1')
 ylabel('Contrast 2');
-print(theIncrFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_%sSingleIncr.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
+print(theIncrFig, fullfile(analysisOutDir,sprintf('%s_SingleIncr.tiff', options.subj)), '-dtiff');
 
 %% Both incremental stimuli
 index = find(stimAnglesFit == 90);
@@ -339,7 +321,7 @@ if (iscell(theDataToFit))
 else
     plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
 end
-print(theIncrFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_DoubleIncr.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+print(theIncrFig, fullfile(analysisOutDir,sprintf('%s_DoubleIncr.tiff', options.subj)), '-dtiff');
 theIncrFig1 = theIncrFig.copy;
 figure(theIncrFig);
 
@@ -355,31 +337,20 @@ lineParams = [x ones(size(x))]\y;
 linePlotX = linspace(-theLim,theLim,100)';
 linePlotY = [linePlotX ones(size(linePlotX))]*lineParams;
 plot(linePlotX,linePlotY,'r','LineWidth',3);
-print(theIncrFig, fullfile(analysisDir,sprintf('%s_%s_%s_%s_DoubleIncrWithLine.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+print(theIncrFig, fullfile(analysisOutDir,sprintf('%s_DoubleIncrWithLine.tiff', options.subj)), '-dtiff');
 
 %% Add incr-incr datum
-if (iscell(theDataToFit))
-    for pp = 1:length(propsSeen)
-        plot(theDataToFit{pp}(1,index),theDataToFit{pp}(2,index),[theColors(pp) 'o'],'MarkerFaceColor',theColors(pp),'MarkerSize',12);
-    end
-else
-    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
-end
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrWithDoubleIncrLine.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+index = find(stimAnglesFit == 45);
+plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
+print(theIncrFig, fullfile(analysisOutDir,sprintf('%s_IncrWithDoubleIncrLine.tiff', options.subj)), '-dtiff');
 
 %% Add incr-incr
 figure(theIncrFig1);
 index = find(stimAnglesFit == 45);
-if (iscell(theDataToFit))
-    for pp = 1:length(propsSeen)
-        plot(theDataToFit{pp}(1,index),theDataToFit{pp}(2,index),[theColors(pp) 'o'],'MarkerFaceColor',theColors(pp),'MarkerSize',12);
-    end
-else
-    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
-end
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_Incr.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
+print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_Incr.tiff', options.subj)), '-dtiff');
 
-%% Fit linear model to single increments and plot
+%% Fit linear model to all the incremental data and plot
 neededAngles = [0 45 90];
 index = [];
 for aa = 1:length(neededAngles)
@@ -396,7 +367,7 @@ end
 linePlotX = linspace(-theLim,theLim,100)';
 linePlotY = [linePlotX ones(size(linePlotX))]*lineParams;
 plot(linePlotX,linePlotY,'r','LineWidth',3);
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrWithBestIncrLine.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_IncrWithBestIncrLine.tiff', options.subj)), '-dtiff');
 
 %% Add decr-decr points
 neededAngles = [180 225 270];
@@ -404,14 +375,8 @@ index = [];
 for aa = 1:length(neededAngles)
     index = [index find(stimAnglesFit == neededAngles(aa))];
 end
-if (iscell(theDataToFit))
-    for pp = 1:length(propsSeen)
-        plot(theDataToFit{pp}(1,index),theDataToFit{pp}(2,index),[theColors(pp) 'o'],'MarkerFaceColor',theColors(pp),'MarkerSize',12);
-    end
-else
-    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
-end
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrAndDecrWithBestIncrLine.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
+print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_IncrAndDecrWithBestIncrLine.tiff', options.subj)), '-dtiff');
 
 %% Add decr-decr line
 neededAngles = [180 225 270];
@@ -430,15 +395,9 @@ end
 linePlotX = linspace(-theLim,theLim,100)';
 linePlotY = [linePlotX ones(size(linePlotX))]*lineParams;
 plot(linePlotX,linePlotY,'r','LineWidth',3);
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_IncrAndDecrWithBestIncrAndDecrLines.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_IncrAndDecrWithBestIncrAndDecrLines.tiff', options.subj)), '-dtiff');
 
 %% Add the critical incr-decr points
 index = find((stimAnglesFit > 90 & stimAnglesFit < 180) | (stimAnglesFit > 270 & stimAnglesFit < 360));
-if (iscell(theDataToFit))
-    for pp = 1:length(propsSeen)
-        plot(theDataToFit{pp}(1,index),theDataToFit{pp}(2,index),[theColors(pp) 'o'],'MarkerFaceColor',theColors(pp),'MarkerSize',12);
-    end
-else
-    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
-end
-print(theIncrFig1, fullfile(analysisDir,sprintf('%s_%s_%s_%s_AllDataWithBestIncrAndDecrLines.tiff', options.subj,lockAngleStr,scaleDecrStr,reflOutStr)), '-dtiff');
+plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
+print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_AllDataWithBestIncrAndDecrLines.tiff', options.subj)), '-dtiff');
