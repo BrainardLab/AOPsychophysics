@@ -221,6 +221,16 @@ if (length(propsSeen) > length(theColors))
 end
 theEllipseFig = figure; clf; hold on;
 plot(theDataToFit(1,:),theDataToFit(2,:),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
+title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
+theLim = 2;
+plot([-theLim theLim],[0 0],'k:','LineWidth',1);
+plot([0 0],[-theLim theLim],'k:','LineWidth',1);
+xlim([-theLim theLim]);
+ylim([-theLim theLim]);
+axis('square');
+xlabel('Contrast 1')
+ylabel('Contrast 2');
+print(theEllipseFig, fullfile(analysisOutDir,sprintf('%s_AllData.tiff', options.subj)), '-dtiff');
 
 %% Fit ellipse
 %
@@ -264,7 +274,6 @@ ellPoints0 = PointsOnEllipseQ(Q0,circlePoints);
 % Plot
 theEllipseFig0 = figure; clf; hold on;
 plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
-plot(ellPoints0(1,:),ellPoints0(2,:),'r','LineWidth',2);
 title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
 theLim = 2;
 plot([-theLim theLim],[0 0],'k:','LineWidth',1);
@@ -274,6 +283,8 @@ ylim([-theLim theLim]);
 axis('square');
 xlabel('Contrast 1')
 ylabel('Contrast 2');
+print(theEllipseFig0, fullfile(analysisOutDir,sprintf('%s_IncrAndDecrOnlyData.tiff', options.subj)), '-dtiff');
+plot(ellPoints0(1,:),ellPoints0(2,:),'r','LineWidth',2);
 print(theEllipseFig0, fullfile(analysisOutDir,sprintf('%s_Ellipse0FitData.tiff', options.subj)), '-dtiff');
 
 % Add to plot of all data
