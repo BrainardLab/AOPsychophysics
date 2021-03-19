@@ -5,7 +5,7 @@ function AOPsychophysicsLocalHook
 %
 % For use with the ToolboxToolbox.  If you copy this into your
 % ToolboxToolbox localToolboxHooks directory (by defalut,
-% ~/localToolboxHooks) and delete "LocalHooksTemplate" from the filename,
+% ~/localToolboxHooks) and delete "Template" from the filename,
 % this will get run when you execute tbUseProject('AOPsychophysics') to set up for
 % this project.  You then edit your local copy to match your configuration.
 %
