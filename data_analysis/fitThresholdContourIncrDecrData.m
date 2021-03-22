@@ -22,6 +22,8 @@ function fitThresholdContourIncrDecrData(options)
 %                     increments. Default false.
 %      'lockSlope'  - Boolean. Lock the slope of the linear fit to -1.
 %                     Default true.
+%      'defocusDioptes' - Numeric.  Compuational observer assumed defocus
+%                     in diopters. Default 0.05.
 %
 % See also: FitEllipseQ, PointsOnEllipseQ, EllipsoidMatricesGenerate.
 %
@@ -42,6 +44,7 @@ arguments
     options.constrainedSlopeFits (1,1) logical = true;
     options.scaleDecr (1,1) logical = false;
     options.lockSlope (1,1) logical = true;
+    options.defocusDiopters (1,1) double = 0.05;
 end
 
 %% Housekeeping
@@ -300,6 +303,42 @@ axis('square');
 xlabel('Contrast 1')
 ylabel('Contrast 2');
 print(theEllipseFig1, fullfile(analysisOutDir,sprintf('%s_Ellipse0AllData.tiff', options.subj)), '-dtiff');
+
+%% Get and fit ideal observer ellipse
+%
+% Directory stuff
+baseProject = 'AOCompObserver';
+compAnalysisBaseDir = getpref(baseProject,'analysisDir');
+compAnalysisInDir = fullfile(compAnalysisBaseDir,sprintf('IncrDecr1_%s',num2str(round(1000*options.defocusDiopters))));
+if (~exist(compAnalysisInDir ,'dir'))
+    error('Computational observer not yet run for specified diopters of defocus');
+end
+compObserver = load(fullfile(compAnalysisInDir,'CompObserver'));
+circlePointsFit(1,:) = cosd(stimAnglesFit);
+circlePointsFit(2,:) = sind(stimAnglesFit);
+compObserverEllData = PointsOnEllipseQ(compObserver.compFitQ,circlePointsFit);
+for aa = 1:length(stimAnglesFit)
+    dataRadii(aa) = norm(theDataToFit(:,aa));
+    compRadii(aa) = norm(compObserverEllData(:,aa));
+end
+compFitFactor = compRadii'\dataRadii';
+compObserverEll = PointsOnEllipseQ(compObserver.compFitQ,circlePoints)*compFitFactor;
+theEllipseFig3 = figure; hold on
+plot(compObserverEll(1,:),compObserverEll(2,:),'r','LineWidth',2);
+title(sprintf('Subject %s, Criterion %d%%, Fit w/ Ideal, %0.2g D',options.subj,round(100*propsSeen),options.defocusDiopters));
+theLim = 2;
+plot([-theLim theLim],[0 0],'k:','LineWidth',1);
+plot([0 0],[-theLim theLim],'k:','LineWidth',1);
+xlim([-theLim theLim]);
+ylim([-theLim theLim]);
+axis('square');
+xlabel('Contrast 1')
+ylabel('Contrast 2');
+print(theEllipseFig3, fullfile(analysisOutDir,sprintf('%s_%s_CompEllipse.tiff',options.subj,num2str(round(1000*options.defocusDiopters)))), '-dtiff');
+
+plot(theDataToFit(1,:),theDataToFit(2,:),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
+print(theEllipseFig3, fullfile(analysisOutDir,sprintf('%s_%s_CompEllipseWithData.tiff',options.subj,num2str(round(1000*options.defocusDiopters)))), '-dtiff');
+
 
 %% Build up some explanatory plots
 %
