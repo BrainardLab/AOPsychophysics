@@ -326,6 +326,7 @@ compObserverEll = PointsOnEllipseQ(compObserver.compFitQ,circlePoints)*compFitFa
 theEllipseFig3 = figure; hold on
 plot(compObserverEll(1,:),compObserverEll(2,:),'r','LineWidth',2);
 title(sprintf('Subject %s, Criterion %d%%, Fit w/ Ideal, %0.2g D',options.subj,round(100*propsSeen),options.defocusDiopters));
+fprintf('Ideal observer scale factor: %0.3g\n',compFitFactor);
 theLim = 2;
 plot([-theLim theLim],[0 0],'k:','LineWidth',1);
 plot([0 0],[-theLim theLim],'k:','LineWidth',1);
