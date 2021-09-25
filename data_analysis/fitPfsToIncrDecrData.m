@@ -146,6 +146,7 @@ for n = 1:length(stimAnglesRaw)
     
     % Get angle.  Set blank as NaN 
     stimAnglesRaw(n) = round(atan2d(stimulusModulationsNormalized(n,2),stimulusModulationsNormalized(n,1)));
+
     if (strcmp(stim1,'Blank') && strcmp(stim2,'Blank'))
         stimAnglesRaw(n) = NaN;
     end
@@ -175,6 +176,13 @@ while (any(stimAngles >= 360))
 end
 % figure; 
 % plot(stimAnglesRaw,stimAngles,'ro','MarkerFaceColor','r','MarkerSize',8);
+
+% Fix up angles for 9/14/21 small size data
+% for n = 1:length(stimAngles)
+%     if (stimAngles(n) >= 329 & stimAngles(n) <= 338)
+%         stimAngles(n) = 334;
+%     end
+% end
 
 %% Compute the false positive rate
 %
@@ -211,14 +219,14 @@ for angleNum = 1:length(stimAngleList)
     fitResponses = responseVector(fitIndex);
     fitModulationVectorLengths = modulationVectorLengths(fitIndex);
 
-    % Fix up levels
-    temp = unique(fitModulationVectorLengths);
-    if (length(find(fitModulationVectorLengths == temp(end))) == 20)
-        index = find(fitModulationVectorLengths == temp(end));
-        for jj = 1:length(index)/2
-            fitModulationVectorLengths(index(jj)) = 0.999*fitModulationVectorLengths(index(jj));
-        end
-    end
+%     % Fix up levels for 9/14/21 small size data
+%     temp = unique(fitModulationVectorLengths);
+%     if (length(find(fitModulationVectorLengths == temp(end))) == 20)
+%         index = find(fitModulationVectorLengths == temp(end));
+%         for jj = 1:length(index)/2
+%             fitModulationVectorLengths(index(jj)) = 0.999*fitModulationVectorLengths(index(jj));
+%         end
+%     end
 
     if (angleNum == 1)
         numberUniqueVectorLengths = length(unique(fitModulationVectorLengths));

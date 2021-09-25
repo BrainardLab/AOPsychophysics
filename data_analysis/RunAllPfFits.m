@@ -19,4 +19,4 @@ fitPfsToIncrDecrData('subj','11046','dataDate','20210914','subProject','IncrDecr
     'norm',false','corrGuess',true,'refl',true);
 
 fitPfsToIncrDecrData('subj','11046','dataDate','20210914','subProject','IncrDecr2','condition','Size_2', ...
-    'norm',false','corrGuess',true,'refl',true);
+    'norm',false','corrGuess',true,'refl',false);
