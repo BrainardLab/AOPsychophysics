@@ -210,6 +210,16 @@ for angleNum = 1:length(stimAngleList)
     fitIndex = find(stimAngles==stimAngleList(angleNum));
     fitResponses = responseVector(fitIndex);
     fitModulationVectorLengths = modulationVectorLengths(fitIndex);
+
+    % Fix up levels
+    temp = unique(fitModulationVectorLengths);
+    if (length(find(fitModulationVectorLengths == temp(end))) == 20)
+        index = find(fitModulationVectorLengths == temp(end));
+        for jj = 1:length(index)/2
+            fitModulationVectorLengths(index(jj)) = 0.999*fitModulationVectorLengths(index(jj));
+        end
+    end
+
     if (angleNum == 1)
         numberUniqueVectorLengths = length(unique(fitModulationVectorLengths));
     else
