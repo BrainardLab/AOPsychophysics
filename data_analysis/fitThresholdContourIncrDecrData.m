@@ -22,7 +22,7 @@ function fitThresholdContourIncrDecrData(options)
 %                     increments. Default false.
 %      'lockSlope'  - Boolean. Lock the slope of the linear fit to -1.
 %                     Default true.
-%      'defocusDioptes' - Numeric.  Compuational observer assumed defocus
+%      'defocusDiopters' - Numeric.  Compuational observer assumed defocus
 %                     in diopters. Default 0.05.
 %
 % See also: FitEllipseQ, PointsOnEllipseQ, EllipsoidMatricesGenerate.
@@ -45,6 +45,7 @@ arguments
     options.scaleDecr (1,1) logical = false;
     options.lockSlope (1,1) logical = true;
     options.defocusDiopters (1,1) double = 0.05;
+    options.pupilDiam (1,1) double = 7;
 end
 
 %% Housekeeping
@@ -309,7 +310,7 @@ print(theEllipseFig1, fullfile(analysisOutDir,sprintf('%s_Ellipse0AllData.tiff',
 % Directory stuff
 baseProject = 'AOCompObserver';
 compAnalysisBaseDir = getpref(baseProject,'analysisDir');
-compAnalysisInDir = fullfile(compAnalysisBaseDir,sprintf('IncrDecr1_%s',num2str(round(1000*options.defocusDiopters))));
+compAnalysisInDir = fullfile(compAnalysisBaseDir,sprintf('IncrDecr1_%s_%d',num2str(round(1000*options.defocusDiopters)),options.pupilDiam));
 if (~exist(compAnalysisInDir ,'dir'))
     error('Computational observer not yet run for specified diopters of defocus');
 end
