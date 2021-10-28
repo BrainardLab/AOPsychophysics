@@ -46,6 +46,7 @@ arguments
     options.lockSlope (1,1) logical = true;
     options.defocusDiopters (1,1) double = 0.05;
     options.pupilDiam (1,1) double = 7;
+    options.theLim (1,1) double = 2;
 end
 
 %% Housekeeping
@@ -226,7 +227,7 @@ end
 theEllipseFig = figure; clf; hold on;
 plot(theDataToFit(1,:),theDataToFit(2,:),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
 title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
-theLim = 2;
+theLim = options.theLim;
 plot([-theLim theLim],[0 0],'k:','LineWidth',1);
 plot([0 0],[-theLim theLim],'k:','LineWidth',1);
 xlim([-theLim theLim]);
@@ -256,7 +257,6 @@ theEllipseFig1 = theEllipseFig.copy;
 figure(theEllipseFig);
 plot(ellPoints(1,:),ellPoints(2,:),'r','LineWidth',2);
 title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
-theLim = 2;
 plot([-theLim theLim],[0 0],'k:','LineWidth',1);
 plot([0 0],[-theLim theLim],'k:','LineWidth',1);
 xlim([-theLim theLim]);
@@ -279,7 +279,6 @@ ellPoints0 = PointsOnEllipseQ(Q0,circlePoints);
 theEllipseFig0 = figure; clf; hold on;
 plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
 title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
-theLim = 2;
 plot([-theLim theLim],[0 0],'k:','LineWidth',1);
 plot([0 0],[-theLim theLim],'k:','LineWidth',1);
 xlim([-theLim theLim]);
@@ -295,7 +294,6 @@ print(theEllipseFig0, fullfile(analysisOutDir,sprintf('%s_Ellipse0FitData.tiff',
 figure(theEllipseFig1);
 plot(ellPoints0(1,:),ellPoints0(2,:),'r','LineWidth',2);
 title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
-theLim = 2;
 plot([-theLim theLim],[0 0],'k:','LineWidth',1);
 plot([0 0],[-theLim theLim],'k:','LineWidth',1);
 xlim([-theLim theLim]);
@@ -328,7 +326,6 @@ theEllipseFig3 = figure; hold on
 plot(compObserverEll(1,:),compObserverEll(2,:),'r','LineWidth',2);
 title(sprintf('Subject %s, Criterion %d%%, Fit w/ Ideal, %0.2g D',options.subj,round(100*propsSeen),options.defocusDiopters));
 fprintf('Ideal observer scale factor: %0.3g\n',compFitFactor);
-theLim = 2;
 plot([-theLim theLim],[0 0],'k:','LineWidth',1);
 plot([0 0],[-theLim theLim],'k:','LineWidth',1);
 xlim([-theLim theLim]);
