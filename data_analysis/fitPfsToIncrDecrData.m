@@ -158,20 +158,6 @@ while (any(stimAnglesRaw >= 360))
     stimAnglesRaw(stimAnglesRaw >= 360) = stimAnglesRaw(stimAnglesRaw >= 360) - 360;
 end
 
-% Sometimes same direction leads to an angle one degre off. Patch up
-% by forcing any subsequent angle within angleTolerance degrees of a
-% previous one to match the previous one.  Force list to be unique
-% within tolerance.
-angleTolerance = 2;
-for ii = 2:length(stimAnglesRaw)
-    for jj = 1:ii-1
-    	if (abs(stimAnglesRaw(ii)-stimAnglesRaw(jj)) < angleTolerance)
-            stimAnglesRaw(ii) = stimAnglesRaw(jj);
-        end
-    end
-end
-
-
 %% Reflect around 45 degree line if desired
 stimAngles = stimAnglesRaw;
 if (options.refl)
@@ -197,6 +183,19 @@ end
 %         stimAngles(n) = 334;
 %     end
 % end
+
+% Sometimes same direction leads to an angle one degre off. Patch up
+% by forcing any subsequent angle within angleTolerance degrees of a
+% previous one to match the previous one.  Force list to be unique
+% within tolerance.
+angleTolerance = 2;
+for ii = 2:length(stimAnglesRaw)
+    for jj = 1:ii-1
+    	if (abs(stimAngles(ii)-stimAngles(jj)) < angleTolerance)
+            stimAngles(ii) = stimAngles(jj);
+        end
+    end
+end
 
 %% Compute the false positive rate
 %

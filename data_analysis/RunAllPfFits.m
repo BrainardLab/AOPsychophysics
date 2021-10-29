@@ -6,9 +6,6 @@
 % the up-down and down-up configurations.  Sometimes
 % this is a cleaner way to look at it, and sometimes not.
 
-%% Clear
-
-
 %% 2020-01-31
 %
 % 7x9 pixel rectangular stimulus, 11043
