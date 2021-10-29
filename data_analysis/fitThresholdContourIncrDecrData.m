@@ -450,3 +450,6 @@ print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_IncrAndDecrWithBestIncrAn
 index = find((stimAnglesFit > 90 & stimAnglesFit < 180) | (stimAnglesFit > 270 & stimAnglesFit < 360));
 plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
 print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_AllDataWithBestIncrAndDecrLines.tiff', options.subj)), '-dtiff');
+
+%% Save the data
+save(fullfile(analysisOutDir,sprintf('%s_ContourAnalysis', options.subj)));

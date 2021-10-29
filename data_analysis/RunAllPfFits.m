@@ -6,15 +6,20 @@
 % the up-down and down-up configurations.  Sometimes
 % this is a cleaner way to look at it, and sometimes not.
 
+%% Clear
+
+
 %% 2020-01-31
 %
-% 7x9 pixel rectangular stimulus, 11043 
+% 7x9 pixel rectangular stimulus, 11043
+clear; close all;
 fitPfsToIncrDecrData('subj','11043','dataDate','20200131','subProject','IncrDecr1','condition','Separation_1', ...
     'norm',false','corrGuess',true,'refl',false);
 fitPfsToIncrDecrData('subj','11046','dataDate','20200131','subProject','IncrDecr1','condition','Separation_1', ...
     'norm',false','corrGuess',true,'refl',false);
 
 % 7x9 pixel rectangular stimulus, 11046
+clear; close all;
 fitPfsToIncrDecrData('subj','11043','dataDate','20200131','subProject','IncrDecr1','condition','Separation_1', ...
     'norm',false','corrGuess',true,'refl',true);
 fitPfsToIncrDecrData('subj','11046','dataDate','20200131','subProject','IncrDecr1','condition','Separation_1', ...
@@ -24,6 +29,7 @@ fitPfsToIncrDecrData('subj','11046','dataDate','20200131','subProject','IncrDecr
 %
 % 7x9 pixel rectangular stimulus, 11046
 % This is a replication of the 2020-01-31 data.
+clear; close all;
 fitPfsToIncrDecrData('subj','11046','dataDate','20210914','subProject','IncrDecr2','condition','Size_1', ...
     'norm',false','corrGuess',true,'refl',false);
 fitPfsToIncrDecrData('subj','11046','dataDate','20210914','subProject','IncrDecr2','condition','Size_1', ...
@@ -48,6 +54,7 @@ fitPfsToIncrDecrData('subj','11046','dataDate','20210914','subProject','IncrDecr
 %% 2021-10-18
 %
 % 5x7 pixel rectangular stimulus, 11046
+clear; close all;
 fitPfsToIncrDecrData('subj','11046','dataDate','20211018','subProject','IncrDecr3','condition','Size_2', ...
     'norm',false','corrGuess',true,'refl',false);
 fitPfsToIncrDecrData('subj','11046','dataDate','20211018','subProject','IncrDecr3','condition','Size_2', ...
@@ -70,19 +77,25 @@ fitPfsToIncrDecrData('subj','11046','dataDate','20211018','subProject','IncrDecr
 %% 2021-10-26
 %
 % 5x7 pixel rectangular stimulus, 11046. 4th quadrant conditions
+clear; close all;
 fitPfsToIncrDecrData('subj','11046','dataDate','20211026','subProject','IncrDecr4','condition','Size_2', ...
     'norm',false','corrGuess',true,'refl',false);
 fitPfsToIncrDecrData('subj','11046','dataDate','20211026','subProject','IncrDecr4','condition','Size_2', ...
     'norm',false','corrGuess',true,'refl',true);
 
 % 6x8 pixel rectangular stimulus, 11046. 4th quadrant conditions
+clear; close all;
 fitPfsToIncrDecrData('subj','11046','dataDate','20211026','subProject','IncrDecr4','condition','Size_4', ...
     'norm',false','corrGuess',true,'refl',false);
 fitPfsToIncrDecrData('subj','11046','dataDate','20211026','subProject','IncrDecr4','condition','Size_4', ...
     'norm',false','corrGuess',true,'refl',true);
 
 % 7x9 pixel rectangular stimulus, 11046. 4th quadrant conditions
+clear; close all;
 fitPfsToIncrDecrData('subj','11046','dataDate','20211026','subProject','IncrDecr4','condition','Size_1', ...
     'norm',false','corrGuess',true,'refl',false);
 fitPfsToIncrDecrData('subj','11046','dataDate','20211026','subProject','IncrDecr4','condition','Size_1', ...
     'norm',false','corrGuess',true,'refl',true);
+
+% Final close up.
+clear; close all;

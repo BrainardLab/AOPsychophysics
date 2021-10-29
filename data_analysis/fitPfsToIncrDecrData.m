@@ -223,8 +223,19 @@ paramsFitted_Individual = nan(length(stimAngleList),4);
 xEval = linspace(0,10.^0.5,1000);
 
 % Plot into this figure
-figure; hold on;
+pfFig1 = figure; hold on;
 set(gcf, 'Color', 'w', 'Units', 'inches', 'Position', [1 1 12 4]);
+
+% And also into this one
+pfFig2 = figure; hold on;
+set(gcf, 'Color', 'w', 'Units', 'inches', 'Position', [1 1 11 11]);
+nXSubplots = ceil(sqrt(length(stimAngleList)));
+nYSubplots = nXSubplots;
+whichSubplot = 1;
+
+% For constrained fits
+pfFig3 = figure; hold on;
+set(gcf, 'Color', 'w', 'Units', 'inches', 'Position', [1 1 11 11]);
 
 % Go through all angles
 for angleNum = 1:length(stimAngleList)
@@ -290,14 +301,31 @@ for angleNum = 1:length(stimAngleList)
     paramsFree = [1 1 0 0]; %[thresh slope guess lapse]; 0 = fixed; 1 = free
     paramsFitted_Individual(angleNum,:) = PAL_PFML_Fit([-3 log10(stimLevels(angleNum,:))], [numCatchPosFit numPosFit(angleNum,:)], [numCatchTrials outOfNum(angleNum,:)], searchGrid, paramsFree, PF);
     
-    % Add to plot
+    % Add to plots
+    figure(pfFig1);
     ax1 = subplot(1,3,1); hold on;
     h = plot(log10(xEval), PF(paramsFitted_Individual(angleNum,:), log10(xEval)), '-', 'LineWidth', 2);
     plot(log10(stimLevels(angleNum,:)), numPosFit(angleNum,:)./outOfNum(angleNum,:), 's', ...
         'MarkerEdgeColor', 'none', 'MarkerFaceColor', h.Color, 'MarkerSize', 10, 'HandleVisibility', 'off');
+    
+    % Also plot one subpanel per PF so we can see them better
+    figure(pfFig2);
+    subplot(nXSubplots,nYSubplots,whichSubplot); hold on;
+    h = plot(log10(xEval), PF(paramsFitted_Individual(angleNum,:), log10(xEval)), '-', 'LineWidth', 2);
+    plot(log10(stimLevels(angleNum,:)), numPosFit(angleNum,:)./outOfNum(angleNum,:), 's', ...
+        'MarkerEdgeColor', 'none', 'MarkerFaceColor', h.Color, 'MarkerSize', 10, 'HandleVisibility', 'off');
+    whichSubplot = whichSubplot + 1;
+    legend(num2str(stimAngleList(angleNum)), 'Location', 'NorthWest')
+    xlim([-1 0.5])
+    ylim([0 1]);
+    axis square
+    xlabel('Log10 modulation intensity (au)', 'FontSize', 14);
+    ylabel('Prop seen', 'FontSize', 14);
+    title('Slopes unconstrained');
 end
 
 % Finish up plot
+figure(pfFig1);
 legend(num2str(stimAngleList), 'Location', 'NorthWest')
 xlim([-1 0.5])
 ylim([0 1]);
@@ -314,12 +342,31 @@ paramsFitted_Multi = PAL_PFML_FitMultiple(log10(stimLevels), numPosFit, outOfNum
 fprintf('Done.\n');
 
 % Plot
+whichSubplot = 1;
 for angleNum = 1:length(stimAngleList)
+    figure(pfFig1);
     ax2 = subplot(1,3,2); hold on;
     h2 = plot(log10(xEval), PF(paramsFitted_Multi(angleNum,:), log10(xEval)), '-', 'LineWidth', 2);
     subplot(1,3,2), plot(log10(stimLevels(angleNum,:)), numPosFit(angleNum,:)./outOfNum(angleNum,:), 's', 'MarkerFaceColor', h2.Color, ...
         'MarkerEdgeColor', 'none', 'MarkerSize', 10, 'HandleVisibility', 'off');
+    
+    % One PF in each subplot
+    figure(pfFig3);
+    subplot(nXSubplots,nYSubplots,whichSubplot); hold on;
+    h = plot(log10(xEval), PF(paramsFitted_Multi(angleNum,:), log10(xEval)), '-', 'LineWidth', 2);
+    plot(log10(stimLevels(angleNum,:)), numPosFit(angleNum,:)./outOfNum(angleNum,:), 's', ...
+        'MarkerEdgeColor', 'none', 'MarkerFaceColor', h.Color, 'MarkerSize', 10, 'HandleVisibility', 'off');
+    whichSubplot = whichSubplot + 1;
+    legend(num2str(stimAngleList(angleNum)), 'Location', 'NorthWest')
+    xlim([-1 0.5])
+    ylim([0 1]);
+    axis square
+    xlabel('Log10 modulation intensity (au)', 'FontSize', 14);
+    ylabel('Prop seen', 'FontSize', 14);
+    title('Slopes constrained');
 end
+
+figure(pfFig1);
 legend(num2str(stimAngleList), 'Location', 'NorthWest')
 xlim([-1 0.5])
 ylim([0 1]);
@@ -329,6 +376,7 @@ xlabel('Log10 modulation intensity (au)', 'FontSize', 14);
 ylabel('Prop seen', 'FontSize', 14);
 
 %% Evaluate fit a specific prop seen and plot on 2-D modulation space
+figure(pfFig1);
 ax3 = subplot(1,3,3); hold on;
 plot([0 0], [-1.5 1.5], 'k-', 'LineWidth', 1.5);
 plot( [-1.5 1.5],[0 0], 'k-', 'LineWidth', 1.5);
@@ -349,11 +397,10 @@ xPlot_Fit = cosd(stimAngleList).*modLevels_PF;
 yPlot_Fit = sind(stimAngleList).*modLevels_PF;
 
 % Next, plot the coordinates, color-coded to prop seen
-hold on; 
+figure(pfFig1); hold on; 
 for n = 1:length(propSeen_Fit)
     subplot(1,3,3), plot(xPlot_Fit(:,n), yPlot_Fit(:,n), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', [0 propSeen_Fit(n) 0]);
 end
-
 xlabel('Stimulus 1 modulation (normalized)', 'FontSize', 14);
 ylabel('Stimulus 2 modulation (normalized)', 'FontSize', 14);
 axLim = round(max(stimulusModulationsNormalized(:)),1); % Round to nearest 0.1
@@ -366,6 +413,7 @@ box on; grid on;
 title('PFs evaluated from center panel');
 
 % Make a color bar and tweak its properties
+figure(pfFig1);
 cmap = zeros(length(0:0.1:1), 3);
 cmap(:,2) = 0:.1:1;
 c = colorbar;
@@ -374,14 +422,15 @@ c.Label.String = 'Prop seen from PF fit';
 c.Label.Rotation = 270;
 c.Label.VerticalAlignment = 'bottom';
 c.Label.FontSize = 12;
-
 set(ax1, 'Position', [0.1 0.110 0.3347.*.66 0.8150])
 set(ax2, 'Position', [0.4 0.110 0.3347.*.66 0.8150])
 set(ax3, 'Position', [0.7 0.110 0.3347*.66 0.8150])
 
 %% Save fit data to mat file
 save(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.mat', options.subj)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');
-print(gcf, fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.tiff', options.subj)), '-dtiff');
+print(pfFig1, fullfile(analysisDir,sprintf('%s_incDecFits_Combined.tiff', options.subj)), '-dtiff');
+print(pfFig2, fullfile(analysisDir,sprintf('%s_incDecFits_UnconstrainedSlope.tiff', options.subj)), '-dtiff');
+print(pfFig3, fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.tiff', options.subj)), '-dtiff');
 
 end
 
