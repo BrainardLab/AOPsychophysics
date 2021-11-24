@@ -94,5 +94,29 @@ fitPfsToIncrDecrData('subj','11046','dataDate','20211026','subProject','IncrDecr
 fitPfsToIncrDecrData('subj','11046','dataDate','20211026','subProject','IncrDecr4','condition','Size_1', ...
     'norm',false','corrGuess',true,'refl',true);
 
+%% 2021-11-23
+%
+% 7x9 pixel rectangular stimulus, 11046. 315 degrees, 0, 2, 4, 6 8 pixel
+% separation
+clear; close all;
+fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep0', ...
+    'norm',false','corrGuess',true,'refl',true);
+fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep2', ...
+    'norm',false','corrGuess',true,'refl',true);
+fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep4', ...
+    'norm',false','corrGuess',true,'refl',true);
+fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep6', ...
+    'norm',false','corrGuess',true,'refl',true);
+fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep8', ...
+    'norm',false','corrGuess',true,'refl',true);
+
+% 6x8 pixel rectangular stimulus, 11046. 315 degrees, 0 and 4 pixel
+% separation
+clear; close all;
+fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size2_Sep0', ...
+    'norm',false','corrGuess',true,'refl',true);
+fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size2_Sep4', ...
+    'norm',false','corrGuess',true,'refl',true);
+
 % Final close up.
 clear; close all;
