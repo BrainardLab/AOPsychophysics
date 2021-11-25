@@ -15,6 +15,9 @@ function fitPfsToIncrDecrData(options)
 %                     model. Default true.
 %      'refl'       - Boolean. Treat stim1 and stim2 as symmetric, and reflect data
 %                     Default false.
+%      'fixedSlope' - Scalar. Fix psychopmetric function slope to this
+%                     value. Default value is [], which leaves slope free
+%                     in the fit.
 %
 %   Data are fit with independent psychometric functions in each direction
 %   as well as with fits constrained across directions.  
@@ -36,6 +39,7 @@ arguments
     options.norm (1,1) logical = false;
     options.corrGuess (1,1) logical = true;
     options.refl (1,1) logical = false;
+    options.fixedSlope = [];
 end
 
 %% Housekeeping
@@ -297,9 +301,17 @@ for angleNum = 1:length(stimAngleList)
     PF = @PAL_Logistic;
     falsePosProp = numCatchPosFit/numCatchTrials;
     searchGrid = [log10(mean(modulationVectorLengths)) 5 falsePosProp, 0.01];
-    paramsFree = [1 1 0 0]; %[thresh slope guess lapse]; 0 = fixed; 1 = free
-    paramsFitted_Individual(angleNum,:) = PAL_PFML_Fit([-3 log10(stimLevels(angleNum,:))], [numCatchPosFit numPosFit(angleNum,:)], [numCatchTrials outOfNum(angleNum,:)], searchGrid, paramsFree, PF);
-    
+    if (isempty(options.fixedSlope))
+        paramsFree = [1 1 0 0]; %[thresh slope guess lapse]; 0 = fixed; 1 = free
+        paramsFitted_Individual(angleNum,:) = PAL_PFML_Fit([-3 log10(stimLevels(angleNum,:))], [numCatchPosFit numPosFit(angleNum,:)], ...
+            [numCatchTrials outOfNum(angleNum,:)], searchGrid, paramsFree, PF);
+    else
+        paramsFree = [1 0 0 0]; %[thresh slope guess lapse]; 0 = fixed; 1 = free
+        searchGrid(2) = options.fixedSlope;
+        paramsFitted_Individual(angleNum,:) = PAL_PFML_Fit([-3 log10(stimLevels(angleNum,:))], [numCatchPosFit numPosFit(angleNum,:)], ...
+            [numCatchTrials outOfNum(angleNum,:)], searchGrid, paramsFree, PF);
+    end
+
     % Add to plots
     figure(pfFig1);
     ax1 = subplot(1,3,1); hold on;
@@ -320,7 +332,12 @@ for angleNum = 1:length(stimAngleList)
     axis square
     xlabel('Log10 modulation intensity (au)', 'FontSize', 14);
     ylabel('Prop seen', 'FontSize', 14);
-    title('Slopes unconstrained');
+    if (isempty(options.fixedSlope))
+        title('Slopes unconstrained');
+    else
+        title(sprintf('Slopes fixed to %0.2f',options.fixedSlope));
+    end
+
 end
 
 % Finish up plot
@@ -331,7 +348,11 @@ ylim([0 1]);
 axis square
 xlabel('Log10 modulation intensity (au)', 'FontSize', 14);
 ylabel('Prop seen', 'FontSize', 14);
-title('Slopes unconstrained');
+if (isempty(options.fixedSlope))
+    title('Slopes unconstrained');
+else
+    title(sprintf('Slopes fixed to %0.2f',options.fixedSlope));
+end
 fprintf('Done.\n');
 
 %% Fit everything together with slopes and guess/lapse rates to be equal across stimulus angles
@@ -362,14 +383,14 @@ for angleNum = 1:length(stimAngleList)
     axis square
     xlabel('Log10 modulation intensity (au)', 'FontSize', 14);
     ylabel('Prop seen', 'FontSize', 14);
-    title('Slopes constrained');
+    title(sprintf('Slopes constrained: %0.2f',paramsFitted_Multi(1,2)));
 end
 
 figure(pfFig1);
 legend(num2str(stimAngleList), 'Location', 'NorthWest')
 xlim([-1 0.5])
 ylim([0 1]);
-title('Slopes constrained');
+title(sprintf('Slopes constrained: %0.2f',paramsFitted_Multi(1,2)));
 axis square;
 xlabel('Log10 modulation intensity (au)', 'FontSize', 14);
 ylabel('Prop seen', 'FontSize', 14);
@@ -426,10 +447,18 @@ set(ax2, 'Position', [0.4 0.110 0.3347.*.66 0.8150])
 set(ax3, 'Position', [0.7 0.110 0.3347*.66 0.8150])
 
 %% Save fit data to mat file
-save(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.mat', options.subj)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');
-print(pfFig1, fullfile(analysisDir,sprintf('%s_incDecFits_Combined.tiff', options.subj)), '-dtiff');
-print(pfFig2, fullfile(analysisDir,sprintf('%s_incDecFits_UnconstrainedSlope.tiff', options.subj)), '-dtiff');
-print(pfFig3, fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.tiff', options.subj)), '-dtiff');
+if (isempty(options.fixedSlope))
+    save(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.mat', options.subj)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');
+    print(pfFig1, fullfile(analysisDir,sprintf('%s_incDecFits_Combined.tiff', options.subj)), '-dtiff');
+    print(pfFig2, fullfile(analysisDir,sprintf('%s_incDecFits_UnconstrainedSlope.tiff', options.subj)), '-dtiff');
+    print(pfFig3, fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.tiff', options.subj)), '-dtiff');
+else
+    slopeSuffix = num2str(round(100*options.fixedSlope));
+    save(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope_%s.mat', options.subj,slopeSuffix)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');
+    print(pfFig1, fullfile(analysisDir,sprintf('%s_incDecFits_Combined_%s.tiff', options.subj,slopeSuffix)), '-dtiff');
+    print(pfFig2, fullfile(analysisDir,sprintf('%s_incDecFits_UnconstrainedSlope_%s.tiff', options.subj,slopeSuffix)), '-dtiff');
+    print(pfFig3, fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope_%s.tiff', options.subj,slopeSuffix)), '-dtiff');
+end
 
 end
 

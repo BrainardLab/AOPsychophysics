@@ -110,6 +110,20 @@ fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr
 fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep8', ...
     'norm',false','corrGuess',true,'refl',true);
 
+% Fix slope to something reasonable
+theSlope = 12;
+fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep0', ...
+    'norm',false','corrGuess',true,'refl',true,'fixedSlope',theSlope);
+fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep2', ...
+    'norm',false','corrGuess',true,'refl',true,'fixedSlope',theSlope);
+fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep4', ...
+    'norm',false','corrGuess',true,'refl',true,'fixedSlope',theSlope);
+fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep6', ...
+    'norm',false','corrGuess',true,'refl',true,'fixedSlope',theSlope);
+fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep8', ...
+    'norm',false','corrGuess',true,'refl',true,'fixedSlope',theSlope);
+
+
 % 6x8 pixel rectangular stimulus, 11046. 315 degrees, 0 and 4 pixel
 % separation
 clear; close all;
@@ -117,6 +131,12 @@ fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr
     'norm',false','corrGuess',true,'refl',true);
 fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size2_Sep4', ...
     'norm',false','corrGuess',true,'refl',true);
+
+% Fix slope
+fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size2_Sep0', ...
+    'norm',false','corrGuess',true,'refl',true,'fixedSlope',theSlope);
+fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size2_Sep4', ...
+    'norm',false','corrGuess',true,'refl',true,'fixedSlope',theSlope);
 
 % Final close up.
 clear; close all;
