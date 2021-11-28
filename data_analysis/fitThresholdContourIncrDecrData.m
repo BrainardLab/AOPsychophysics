@@ -26,6 +26,8 @@ function fitThresholdContourIncrDecrData(options)
 %                     in diopters. Default 0.05.
 %      'computationalName' - String. Name of computational observer
 %                     condition to load. Default '7_9_0'
+%      'pfSlope'    - Locked slope used in PF fit.  Default empty, measn
+%                     unlocked fit file used.
 %
 % See also: FitEllipseQ, PointsOnEllipseQ, EllipsoidMatricesGenerate.
 %
@@ -50,6 +52,7 @@ arguments
     options.pupilDiam (1,1) double = 7;
     options.theLim (1,1) double = 2;
     options.computationalName = '7_9_0'
+    options.pfSlope = [];
 end
 
 %% Housekeeping
@@ -125,7 +128,13 @@ if (~exist(analysisOutDir,'dir'))
 end
 
 %% Read output of psychometric fitting
-theData = load(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.mat',options.subj)));
+if (isempty(options.pfSlope))
+    theData = load(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.mat',options.subj)));
+else
+    slopeStr = round(100*options.pfSlope);
+    theData = load(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope_%d.mat',options.subj,slopeStr)));
+end
+
 if isempty(theData)
     error('No fit data found');
 end
@@ -243,68 +252,73 @@ print(theEllipseFig, fullfile(analysisOutDir,sprintf('%s_AllData.tiff', options.
 %% Fit ellipse
 %
 % The work of generating the points to plot is done by PointsOnEllipseQ.
-[ellParams,A,Ainv,Q] = FitEllipseQ(theDataToFit,'lockAngleAt0',false,'errorScalar',errorScalar,'initialParams',[incrThresh(end) decrThresh(end) 45]);
+% Can only do this if we have enough data.
 nCirclePoints = 100;
 circlePoints = UnitCircleGenerate(nCirclePoints);
-ellPoints = PointsOnEllipseQ(Q,circlePoints);
+if (size(theDataToFit,1) > 4)
+    [ellParams,A,Ainv,Q] = FitEllipseQ(theDataToFit,'lockAngleAt0',false,'errorScalar',errorScalar,'initialParams',[incrThresh(end) decrThresh(end) 45]);
 
-% Print ellipse parameters
-%
-% Give full length of axes, not radius equivalent (which is why it is 2 in
-% the numerator of the numbers below, not 1).  Printout is a little
-% different depending on whether angle is locked or not.
-fprintf('Major axis length: %0.2f, minor axis length: %0.2f, major axis angle %0.1f deg\n',2/ellParams(1),2/ellParams(2),ellParams(3));
+    ellPoints = PointsOnEllipseQ(Q,circlePoints);
 
-% Add ellipse to plot
-theEllipseFig1 = theEllipseFig.copy;
-figure(theEllipseFig);
-plot(ellPoints(1,:),ellPoints(2,:),'r','LineWidth',2);
-title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
-plot([-theLim theLim],[0 0],'k:','LineWidth',1);
-plot([0 0],[-theLim theLim],'k:','LineWidth',1);
-xlim([-theLim theLim]);
-ylim([-theLim theLim]);
-axis('square');
-xlabel('Contrast 1')
-ylabel('Contrast 2');
-print(theEllipseFig, fullfile(analysisOutDir,sprintf('%s_EllipseAllData.tiff', options.subj)), '-dtiff');
+    % Print ellipse parameters
+    %
+    % Give full length of axes, not radius equivalent (which is why it is 2 in
+    % the numerator of the numbers below, not 1).  Printout is a little
+    % different depending on whether angle is locked or not.
+    fprintf('Major axis length: %0.2f, minor axis length: %0.2f, major axis angle %0.1f deg\n',2/ellParams(1),2/ellParams(2),ellParams(3));
 
-%% Fit ellipse with angle locked to just pure increment and decrement data
-neededAngles = [0 90 180 270];
-index = [];
-for aa = 1:length(neededAngles)
-    index = [index find(stimAnglesFit == neededAngles(aa))];
+    % Add ellipse to plot
+    theEllipseFig1 = theEllipseFig.copy;
+    figure(theEllipseFig);
+    plot(ellPoints(1,:),ellPoints(2,:),'r','LineWidth',2);
+    title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
+    plot([-theLim theLim],[0 0],'k:','LineWidth',1);
+    plot([0 0],[-theLim theLim],'k:','LineWidth',1);
+    xlim([-theLim theLim]);
+    ylim([-theLim theLim]);
+    axis('square');
+    xlabel('Contrast 1')
+    ylabel('Contrast 2');
+    print(theEllipseFig, fullfile(analysisOutDir,sprintf('%s_EllipseAllData.tiff', options.subj)), '-dtiff');
+
+    %% Fit ellipse with angle locked to just pure increment and decrement data
+    neededAngles = [0 90 180 270];
+    index = [];
+    for aa = 1:length(neededAngles)
+        index = [index find(stimAnglesFit == neededAngles(aa))];
+    end
+    [ellParams0,A0,Ainv0,Q0] = FitEllipseQ(theDataToFit(:,index),'lockAngleAt0',true,'errorScalar',errorScalar,'initialParams',[incrThresh(end) decrThresh(end) 0]);
+    ellPoints0 = PointsOnEllipseQ(Q0,circlePoints);
+
+    % Plot
+    theEllipseFig0 = figure; clf; hold on;
+    plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
+    title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
+    plot([-theLim theLim],[0 0],'k:','LineWidth',1);
+    plot([0 0],[-theLim theLim],'k:','LineWidth',1);
+    xlim([-theLim theLim]);
+    ylim([-theLim theLim]);
+    axis('square');
+    xlabel('Contrast 1')
+    ylabel('Contrast 2');
+    print(theEllipseFig0, fullfile(analysisOutDir,sprintf('%s_IncrAndDecrOnlyData.tiff', options.subj)), '-dtiff');
+    plot(ellPoints0(1,:),ellPoints0(2,:),'r','LineWidth',2);
+    print(theEllipseFig0, fullfile(analysisOutDir,sprintf('%s_Ellipse0FitData.tiff', options.subj)), '-dtiff');
+
+    % Add to plot of all data
+    figure(theEllipseFig1);
+    plot(ellPoints0(1,:),ellPoints0(2,:),'r','LineWidth',2);
+    title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
+    plot([-theLim theLim],[0 0],'k:','LineWidth',1);
+    plot([0 0],[-theLim theLim],'k:','LineWidth',1);
+    xlim([-theLim theLim]);
+    ylim([-theLim theLim]);
+    axis('square');
+    xlabel('Contrast 1')
+    ylabel('Contrast 2');
+    print(theEllipseFig1, fullfile(analysisOutDir,sprintf('%s_Ellipse0AllData.tiff', options.subj)), '-dtiff');
+
 end
-[ellParams0,A0,Ainv0,Q0] = FitEllipseQ(theDataToFit(:,index),'lockAngleAt0',true,'errorScalar',errorScalar,'initialParams',[incrThresh(end) decrThresh(end) 0]);
-ellPoints0 = PointsOnEllipseQ(Q0,circlePoints);
-
-% Plot
-theEllipseFig0 = figure; clf; hold on;
-plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
-title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
-plot([-theLim theLim],[0 0],'k:','LineWidth',1);
-plot([0 0],[-theLim theLim],'k:','LineWidth',1);
-xlim([-theLim theLim]);
-ylim([-theLim theLim]);
-axis('square');
-xlabel('Contrast 1')
-ylabel('Contrast 2');
-print(theEllipseFig0, fullfile(analysisOutDir,sprintf('%s_IncrAndDecrOnlyData.tiff', options.subj)), '-dtiff');
-plot(ellPoints0(1,:),ellPoints0(2,:),'r','LineWidth',2);
-print(theEllipseFig0, fullfile(analysisOutDir,sprintf('%s_Ellipse0FitData.tiff', options.subj)), '-dtiff');
-
-% Add to plot of all data
-figure(theEllipseFig1);
-plot(ellPoints0(1,:),ellPoints0(2,:),'r','LineWidth',2);
-title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
-plot([-theLim theLim],[0 0],'k:','LineWidth',1);
-plot([0 0],[-theLim theLim],'k:','LineWidth',1);
-xlim([-theLim theLim]);
-ylim([-theLim theLim]);
-axis('square');
-xlabel('Contrast 1')
-ylabel('Contrast 2');
-print(theEllipseFig1, fullfile(analysisOutDir,sprintf('%s_Ellipse0AllData.tiff', options.subj)), '-dtiff');
 
 %% Get and fit ideal observer ellipse
 %
