@@ -24,6 +24,8 @@ function fitThresholdContourIncrDecrData(options)
 %                     Default true.
 %      'defocusDiopters' - Numeric.  Compuational observer assumed defocus
 %                     in diopters. Default 0.05.
+%      'computationalName' - String. Name of computational observer
+%                     condition to load. Default '7_9_0'
 %
 % See also: FitEllipseQ, PointsOnEllipseQ, EllipsoidMatricesGenerate.
 %
@@ -47,6 +49,7 @@ arguments
     options.defocusDiopters (1,1) double = 0.05;
     options.pupilDiam (1,1) double = 7;
     options.theLim (1,1) double = 2;
+    options.computationalName = '7_9_0'
 end
 
 %% Housekeeping
@@ -308,11 +311,11 @@ print(theEllipseFig1, fullfile(analysisOutDir,sprintf('%s_Ellipse0AllData.tiff',
 % Directory stuff
 baseProject = 'AOCompObserver';
 compAnalysisBaseDir = getpref(baseProject,'analysisDir');
-compAnalysisInDir = fullfile(compAnalysisBaseDir,sprintf('IncrDecr1_%s_%d',num2str(round(1000*options.defocusDiopters)),options.pupilDiam));
+compAnalysisInDir = fullfile(compAnalysisBaseDir,sprintf('%s_%s_%d',options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam));
 if (~exist(compAnalysisInDir ,'dir'))
     error('Computational observer not yet run for specified diopters of defocus');
 end
-compObserver = load(fullfile(compAnalysisInDir,'CompObserver'));
+compObserver = load(fullfile(compAnalysisInDir,sprintf('CompObserver_%s',options.computationalName)));
 circlePointsFit(1,:) = cosd(stimAnglesFit);
 circlePointsFit(2,:) = sind(stimAnglesFit);
 compObserverEllData = PointsOnEllipseQ(compObserver.compFitQ,circlePointsFit);
@@ -337,7 +340,6 @@ print(theEllipseFig3, fullfile(analysisOutDir,sprintf('%s_%s_CompEllipse.tiff',o
 
 plot(theDataToFit(1,:),theDataToFit(2,:),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
 print(theEllipseFig3, fullfile(analysisOutDir,sprintf('%s_%s_CompEllipseWithData.tiff',options.subj,num2str(round(1000*options.defocusDiopters)))), '-dtiff');
-
 
 %% Build up some explanatory plots
 %
@@ -452,4 +454,5 @@ plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceC
 print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_AllDataWithBestIncrAndDecrLines.tiff', options.subj)), '-dtiff');
 
 %% Save the data
+close all;
 save(fullfile(analysisOutDir,sprintf('%s_ContourAnalysis', options.subj)));
