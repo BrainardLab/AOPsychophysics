@@ -8,14 +8,27 @@
 %% Clear
 clear; close all;
 
+%% Parameters
+%
+% Where's the analyzed data and precomputed computational observer output?
+psychoProject = 'AOPsychophysics';
+psychoBaseDir = getpref(psychoProject,'analysisDir');
+compProject = 'AOCompObserver';
+compBaseDir = getpref(compProject,'analysisDir');
+
+% Computational observer parameters
+computationalName = '7_9_0';
+defocusDiopters = 0.10;
+pupilDiam = 7;
+
 %% Specify sessions
 whichSize = '7x9';
 switch (whichSize)
     case '7x9'
-        theFiles{1} = '/Users/dhb/Dropbox (Aguirre-Brainard Lab)/AOPY_analysis/AOPsychophysics/IncrDecr1/11046/20200131/Separation_1/notnorm_corrguess_norefl/scaleDecr_noReflOut/11046_ContourAnalysis.mat';
-        theFiles{2} = '/Users/dhb/Dropbox (Aguirre-Brainard Lab)/AOPY_analysis/AOPsychophysics/IncrDecr2/11046/20210914/Size_1/notnorm_corrguess_noRefl/scaleDecr_noReflOut/11046_ContourAnalysis.mat';
-        theFiles{3} = '/Users/dhb/Dropbox (Aguirre-Brainard Lab)/AOPY_analysis/AOPsychophysics/IncrDecr4/11046/20211026/Size_1/notnorm_corrguess_norefl/scaleDecr_noReflOut/11046_ContourAnalysis.mat';
-        theFiles{4} = '/Users/dhb/Dropbox (Aguirre-Brainard Lab)/AOPY_analysis/AOPsychophysics/IncrDecr5/11046/20211123/Size1_Sep0/notnorm_corrguess_norefl/noScaleDecr_noReflOut/11046_ContourAnalysis.mat';
+        theFiles{1} = fullfile(psychoBaseDir,'IncrDecr1','11046','20200131','Separation_1','notnorm_corrguess_norefl','noScaleDecr_noReflOut/11046_ContourAnalysis.mat');
+        theFiles{2} = fullfile(psychoBaseDir,'IncrDecr2','11046','20210914','Size_1','notnorm_corrguess_norefl','noScaleDecr_noReflOut/11046_ContourAnalysis.mat');
+        theFiles{3} = fullfile(psychoBaseDir,'IncrDecr4','11046','20211026','Size_1','notnorm_corrguess_norefl','noScaleDecr_noReflOut/11046_ContourAnalysis.mat');
+        theFiles{4} = fullfile(psychoBaseDir,'IncrDecr5','11046','20211123','Size1_Sep0','notnorm_corrguess_norefl','noScaleDecr_noReflOut/11046_ContourAnalysis.mat');
         titleStr = '11046, 7x9';
         theLim = 2;
 end
@@ -56,12 +69,7 @@ ylabel('Contrast 2');
 % print(theDataFig, fullfile(analysisOutDir,sprintf('%s_AllData.tiff', options.subj)), '-dtiff');
 
 %% Read in ideal observer threshold contour and add to plot, after scaling
-baseProject = 'AOCompObserver';
-compAnalysisBaseDir = getpref(baseProject,'analysisDir');
-computationalName = '7_9_0';
-defocusDiopters = 0.10;
-pupilDiam = 7;
-compAnalysisInDir = fullfile(compAnalysisBaseDir,sprintf('%s_%s_%d',computationalName,num2str(round(1000*defocusDiopters)),pupilDiam));
+compAnalysisInDir = fullfile(compBaseDir,sprintf('%s_%s_%d',computationalName,num2str(round(1000*defocusDiopters)),pupilDiam));
 if (~exist(compAnalysisInDir ,'dir'))
     error('Computational observer not yet run for specified diopters of defocus');
 end
