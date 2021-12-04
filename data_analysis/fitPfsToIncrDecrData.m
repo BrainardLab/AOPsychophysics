@@ -1,12 +1,25 @@
-function fitPfsToIncrDecrData(options)
+function sessionData = fitPfsToIncrDecrData(options)
 % Combine data from inc/dec experiments and fit PFs
+%
+% Synopsis:
+%   sessionData = fitPfsToIncrDecrData(options);
 %
 % Description:
 %   Read in data from the AO inc/dec experiments and fit PFs.
 %
-%   Optional key/value pairs
+% Inputs:
+%   None.  Data location and filename obtained through key value pairs.
+%
+% Outputs:
+%   sessionData     - Structure containing key data from this analysis.
+%                     Can be used to do a more aggregated analysis.
+%
+% Optional key/value pairs
 %      'subj'       - String. Subject ID.  Default '11043';
 %      'dataDate'   - String. Date data collected. Default '20200131'.
+%      'baseProject' - String. Name of base project.  Used to find
+%                     preference for location of data tree. Default
+%                     'AOPsychophysics'.
 %      'subProject' - String. Subproject. Default 'IncrDecr1'.
 %      'condition'  - String. Specify condition. Default 'Separation_1'.
 %      'norm'       - Boolean. Normalize increment constrast by max used, and same for
@@ -34,6 +47,7 @@ function fitPfsToIncrDecrData(options)
 arguments
     options.subj string = '11043';
     options.dataDate string = '20200131';
+    options.baseProject = 'AOPsychophysics';
     options.subProject string = 'IncrDecr1';
     options.condition string = 'Separation_1';
     options.norm (1,1) logical = false;
@@ -44,7 +58,7 @@ end
 
 %% Housekeeping
 close all
-baseProject = 'AOPsychophysics';
+baseProject = options.baseProject;
 subProject = options.subProject;
 
 %% Load in the data files (update directories to wherever these data live on your machine)
@@ -87,6 +101,14 @@ dataDir = fullfile(dataBaseDir,subProject,options.subj,options.dataDate,options.
 analysisDir = fullfile(analysisBaseDir,subProject,options.subj,options.dataDate,options.condition,analysisSubDir);
 if (~exist(analysisDir,'dir'))
     mkdir(analysisDir);
+end
+
+% Output mat file name
+if (isempty(options.fixedSlope))
+    outFile = sprintf('%s_incDecFits_ConstrainedSlope.mat', options.subj);
+else
+    slopeSuffix = num2str(round(100*options.fixedSlope));
+    outFile = sprintf('%s_incDecFits_ConstrainedSlope_%s.mat',options.subj,slopeSuffix);
 end
 
 %% Get list of .mat files for the data we're analyzing
@@ -178,15 +200,6 @@ end
 while (any(stimAngles >= 360))
     stimAngles(stimAngles >= 360) = stimAngles(stimAngles >= 360) - 360;
 end
-% figure; 
-% plot(stimAnglesRaw,stimAngles,'ro','MarkerFaceColor','r','MarkerSize',8);
-
-% Fix up angles for 9/14/21 small size data
-% for n = 1:length(stimAngles)
-%     if (stimAngles(n) >= 329 & stimAngles(n) <= 338)
-%         stimAngles(n) = 334;
-%     end
-% end
 
 % Sometimes same direction leads to an angle one degre off. Patch up
 % by forcing any subsequent angle within angleTolerance degrees of a
@@ -242,19 +255,17 @@ set(gcf, 'Color', 'w', 'Units', 'inches', 'Position', [1 1 11 11]);
 
 % Go through all angles
 for angleNum = 1:length(stimAngleList)
+    % Start accumulating return struct
+    sessionData{angleNum}.dirName = analysisDir;
+    sessionData{angleNum}.outFile = outFile;
+    sessionData{angleNum}.angle = stimAngleList(angleNum);
+    sessionData{angleNum}.numCatchTrials = numCatchTrials;
+    sessionData{angleNum}.numCatchPos = numCatchPos;
+
     % Get data for this angle
     fitIndex = find(stimAngles==stimAngleList(angleNum));
     fitResponses = responseVector(fitIndex);
     fitModulationVectorLengths = modulationVectorLengths(fitIndex);
-
-%     % Fix up levels for 9/14/21 small size data
-%     temp = unique(fitModulationVectorLengths);
-%     if (length(find(fitModulationVectorLengths == temp(end))) == 20)
-%         index = find(fitModulationVectorLengths == temp(end));
-%         for jj = 1:length(index)/2
-%             fitModulationVectorLengths(index(jj)) = 0.999*fitModulationVectorLengths(index(jj));
-%         end
-%     end
 
     if (angleNum == 1)
         numberUniqueVectorLengths = length(unique(fitModulationVectorLengths));
@@ -266,12 +277,14 @@ for angleNum = 1:length(stimAngleList)
     
     % Group data (not necessary but makes for easier plotting)
     % 
-    % Inserting 0.001 as value for catch trials
-    stimLevels(angleNum,:) = [0.001 unique(fitModulationVectorLengths)']; %#ok<SAGROW>
-    outOfNum(angleNum,:) = zeros(1,size(stimLevels,2)); %#ok<SAGROW>
-    numPos(angleNum,:) = zeros(1,size(stimLevels,2)); %#ok<SAGROW>
+    % Inserting small stim value for catch trials
+    catchXVal = 0.0001;
+    stimLevels(angleNum,:) = [catchXVal unique(fitModulationVectorLengths)']; 
+    outOfNum(angleNum,:) = zeros(1,size(stimLevels,2)); 
+    numPos(angleNum,:) = zeros(1,size(stimLevels,2)); 
     
-    % Build up data for each fit
+    % Build up data for each fit.  Tack on catch trials at the start
+    % of the list for each direction.
     for j = 1:length(stimLevels(angleNum,:))
         if j == 1 % Catch trial
             outOfNum(angleNum,j) = numCatchTrials;
@@ -282,7 +295,11 @@ for angleNum = 1:length(stimAngleList)
             numPos(angleNum, j) = length(tempRespVector(tempRespVector==yesVal));
         end
     end
-    
+    sessionData{angleNum}.stimLevels = stimLevels(angleNum,:);
+    sessionData{angleNum}.outOfNum = outOfNum(angleNum,:);
+    sessionData{angleNum}.numPos = numPos(angleNum,:);
+
+    % Correct for guessing, or not
     if (options.corrGuess)
         pFA = numCatchPos/numCatchTrials;
         pHit(angleNum,:) = numPos(angleNum,:)./outOfNum(angleNum,:);
@@ -294,23 +311,27 @@ for angleNum = 1:length(stimAngleList)
         numPosFit(angleNum,:) = round(pHitCorrected(angleNum,:) .* outOfNum(angleNum,:));
     else
         numCatchPosFit = numCatchPos;
-        numPosFit = numPos;
+        numPosFit(angleNum,:) = numPos(angleNum,:);
     end
-    
-    % Set up the PF fitting (requires Palamedes toolbox)
+    sessionData{angleNum}.numCatchPosFit = numCatchPosFit;
+    sessionData{angleNum}.numPosFit = numPosFit(angleNum,:);
+
+    % Set up the PF fitting (requires Palamedes toolbox).  Note that the
+    % catch trials are added in here in the call to the fit.
     PF = @PAL_Logistic;
-    falsePosProp = numCatchPosFit/numCatchTrials;
-    searchGrid = [log10(mean(modulationVectorLengths)) 5 falsePosProp, 0.01];
+    falsePosRate = numCatchPosFit/numCatchTrials;
+    searchGrid = [log10(mean(modulationVectorLengths)) 5 falsePosRate, 0.01];
     if (isempty(options.fixedSlope))
         paramsFree = [1 1 0 0]; %[thresh slope guess lapse]; 0 = fixed; 1 = free
-        paramsFitted_Individual(angleNum,:) = PAL_PFML_Fit([-3 log10(stimLevels(angleNum,:))], [numCatchPosFit numPosFit(angleNum,:)], ...
-            [numCatchTrials outOfNum(angleNum,:)], searchGrid, paramsFree, PF);
+        paramsFitted_Individual(angleNum,:) = PAL_PFML_Fit(log10(stimLevels(angleNum,:)), numPosFit(angleNum,:), ...
+            outOfNum(angleNum,:), searchGrid, paramsFree, PF);
     else
         paramsFree = [1 0 0 0]; %[thresh slope guess lapse]; 0 = fixed; 1 = free
         searchGrid(2) = options.fixedSlope;
-        paramsFitted_Individual(angleNum,:) = PAL_PFML_Fit([-3 log10(stimLevels(angleNum,:))], [numCatchPosFit numPosFit(angleNum,:)], ...
-            [numCatchTrials outOfNum(angleNum,:)], searchGrid, paramsFree, PF);
+        paramsFitted_Individual(angleNum,:) = PAL_PFML_Fit(log10(stimLevels(angleNum,:)), numPosFit(angleNum,:), ...
+            outOfNum(angleNum,:), searchGrid, paramsFree, PF);
     end
+    sessionData{angleNum}.falsePosRate = falsePosRate;
 
     % Add to plots
     figure(pfFig1);
@@ -401,11 +422,11 @@ ax3 = subplot(1,3,3); hold on;
 plot([0 0], [-1.5 1.5], 'k-', 'LineWidth', 1.5);
 plot( [-1.5 1.5],[0 0], 'k-', 'LineWidth', 1.5);
 
-%% Evaluate the PF and convert back to x,y coordinates for ellipse fitting
+%% Evaluate the PF and convert back to x,y coordinates to make a plot
 %
 % First, round to the nearest .1 above the guess rate (code won't be happy if you
 % try to evaluate the PF for prop seen below the lower asymptote)
-propEvalStart = ceil(10*falsePosProp)/10; 
+propEvalStart = ceil(10*falsePosRate)/10; 
 propSeen_Fit = propEvalStart:.1:.9;
 modLevels_PF = nan(size(paramsFitted_Multi,1), length(propSeen_Fit));
 for n = 1:size(paramsFitted_Multi,1)
@@ -448,13 +469,13 @@ set(ax3, 'Position', [0.7 0.110 0.3347*.66 0.8150])
 
 %% Save fit data to mat file
 if (isempty(options.fixedSlope))
-    save(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.mat', options.subj)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');
+    save(fullfile(analysisDir,outFile),'sessionData','stimAngleList','paramsFitted_Individual','paramsFitted_Multi','PF');
     print(pfFig1, fullfile(analysisDir,sprintf('%s_incDecFits_Combined.tiff', options.subj)), '-dtiff');
     print(pfFig2, fullfile(analysisDir,sprintf('%s_incDecFits_UnconstrainedSlope.tiff', options.subj)), '-dtiff');
     print(pfFig3, fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.tiff', options.subj)), '-dtiff');
 else
     slopeSuffix = num2str(round(100*options.fixedSlope));
-    save(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope_%s.mat', options.subj,slopeSuffix)), 'stimAngleList', 'falsePosProp', 'paramsFitted_Individual', 'paramsFitted_Multi', 'PF');
+    save(fullfile(analysisDir,outFile),'sessionData','stimAngleList','paramsFitted_Individual','paramsFitted_Multi','PF');
     print(pfFig1, fullfile(analysisDir,sprintf('%s_incDecFits_Combined_%s.tiff', options.subj,slopeSuffix)), '-dtiff');
     print(pfFig2, fullfile(analysisDir,sprintf('%s_incDecFits_UnconstrainedSlope_%s.tiff', options.subj,slopeSuffix)), '-dtiff');
     print(pfFig3, fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope_%s.tiff', options.subj,slopeSuffix)), '-dtiff');

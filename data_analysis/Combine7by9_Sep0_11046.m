@@ -34,6 +34,7 @@ switch (whichSize)
 end
 
 %% Load in data from each session
+warnState = warning('off','MATLAB:load:cannotInstantiateLoadedVariable');
 theDataToFit = [];
 stimAnglesFit = [];
 for ii = 1:length(theFiles)
@@ -41,6 +42,7 @@ for ii = 1:length(theFiles)
     theDataToFit = [theDataToFit theData{ii}.theDataToFit];
     stimAnglesFit = [stimAnglesFit theData{ii}.stimAnglesFit];
 end
+warning(warnState);
 
 %% Plot the data
 theColors = ['r' 'g' 'b' 'k' 'c' 'y'];
