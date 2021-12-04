@@ -79,7 +79,7 @@ end
 if (options.reflIn)
     reflInStr = 'refl';
 else
-    reflInStr = 'noRefl';
+    reflInStr = 'norefl';
 end
 if (options.reflOut)
     reflOutStr = 'reflOut';

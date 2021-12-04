@@ -51,11 +51,11 @@ fitPfsToIncrDecrData('subj','11046','dataDate','20210914','subProject','IncrDecr
 %% 2021-10-18
 %
 % 5x7 pixel rectangular stimulus, 11046
-clear; close all;
-fitPfsToIncrDecrData('subj','11046','dataDate','20211018','subProject','IncrDecr3','condition','Size_2', ...
-    'norm',false','corrGuess',true,'refl',false);
-fitPfsToIncrDecrData('subj','11046','dataDate','20211018','subProject','IncrDecr3','condition','Size_2', ...
-    'norm',false','corrGuess',true,'refl',true);
+% clear; close all;
+% fitPfsToIncrDecrData('subj','11046','dataDate','20211018','subProject','IncrDecr3','condition','Size_2', ...
+%     'norm',false','corrGuess',true,'refl',false);
+% fitPfsToIncrDecrData('subj','11046','dataDate','20211018','subProject','IncrDecr3','condition','Size_2', ...
+%     'norm',false','corrGuess',true,'refl',true);
 
 % 4x8 pixel rectangular stimulus, 11046
 % 
@@ -74,11 +74,11 @@ fitPfsToIncrDecrData('subj','11046','dataDate','20211018','subProject','IncrDecr
 %% 2021-10-26
 %
 % 5x7 pixel rectangular stimulus, 11046. 4th quadrant conditions
-clear; close all;
-fitPfsToIncrDecrData('subj','11046','dataDate','20211026','subProject','IncrDecr4','condition','Size_2', ...
-    'norm',false','corrGuess',true,'refl',false);
-fitPfsToIncrDecrData('subj','11046','dataDate','20211026','subProject','IncrDecr4','condition','Size_2', ...
-    'norm',false','corrGuess',true,'refl',true);
+% clear; close all;
+% fitPfsToIncrDecrData('subj','11046','dataDate','20211026','subProject','IncrDecr4','condition','Size_2', ...
+%     'norm',false','corrGuess',true,'refl',false);
+% fitPfsToIncrDecrData('subj','11046','dataDate','20211026','subProject','IncrDecr4','condition','Size_2', ...
+%     'norm',false','corrGuess',true,'refl',true);
 
 % 6x8 pixel rectangular stimulus, 11046. 4th quadrant conditions
 clear; close all;
@@ -135,6 +135,7 @@ fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr
     'norm',false','corrGuess',true,'refl',true);
 
 % Fix slope
+theSlope = 12;
 fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size2_Sep0', ...
     'norm',false','corrGuess',true,'refl',true,'fixedSlope',theSlope);
 fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size2_Sep4', ...
