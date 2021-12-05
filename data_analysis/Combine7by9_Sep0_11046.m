@@ -17,18 +17,21 @@ compProject = 'AOCompObserver';
 compBaseDir = getpref(compProject,'analysisDir');
 
 % Computational observer parameters
+theSubj = '11046';
 computationalName = '7_9_0';
 defocusDiopters = 0.10;
 pupilDiam = 7;
+filename = sprintf('%s_%s_D%s_P%d_ContourAnalysis.mat', ...
+    theSubj,computationalName,num2str(round(1000*defocusDiopters)),pupilDiam);
 
 %% Specify sessions
 whichSize = '7x9';
 switch (whichSize)
     case '7x9'
-        theFiles{1} = fullfile(psychoBaseDir,'IncrDecr1','11046','20200131','Separation_1','notnorm_corrguess_norefl','noScaleDecr_noReflOut/11046_ContourAnalysis.mat');
-        theFiles{2} = fullfile(psychoBaseDir,'IncrDecr2','11046','20210914','Size_1','notnorm_corrguess_norefl','noScaleDecr_noReflOut/11046_ContourAnalysis.mat');
-        theFiles{3} = fullfile(psychoBaseDir,'IncrDecr4','11046','20211026','Size_1','notnorm_corrguess_norefl','noScaleDecr_noReflOut/11046_ContourAnalysis.mat');
-        theFiles{4} = fullfile(psychoBaseDir,'IncrDecr5','11046','20211123','Size1_Sep0','notnorm_corrguess_norefl','noScaleDecr_noReflOut/11046_ContourAnalysis.mat');
+        theFiles{1} = fullfile(psychoBaseDir,'IncrDecr1',theSubj,'20200131','Separation_1','notnorm_corrguess_norefl','noScaleDecr_noReflOut_Aggregated',filename);
+        theFiles{2} = fullfile(psychoBaseDir,'IncrDecr2',theSubj,'20210914','Size_1','notnorm_corrguess_norefl','noScaleDecr_noReflOut_Aggregated',filename);
+        theFiles{3} = fullfile(psychoBaseDir,'IncrDecr4',theSubj,'20211026','Size_1','notnorm_corrguess_norefl','noScaleDecr_noReflOut_Aggregated',filename);
+        theFiles{4} = fullfile(psychoBaseDir,'IncrDecr5',theSubj,'20211123','Size1_Sep0','notnorm_corrguess_norefl','noScaleDecr_noReflOut_Aggregated',filename);
         titleStr = '11046, 7x9';
         theLim = 2;
 end

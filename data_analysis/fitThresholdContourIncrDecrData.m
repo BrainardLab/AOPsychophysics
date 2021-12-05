@@ -27,7 +27,16 @@ function fitThresholdContourIncrDecrData(options)
 %      'computationalName' - String. Name of computational observer
 %                     condition to load. Default '7_9_0'
 %      'pfSlope'    - Locked slope used in PF fit.  Default empty, measn
-%                     unlocked fit file used.
+%                     unlocked fit file used. This causes the routine to
+%                     read from a file with a slope indicator in its name,
+%                     and (somewhat confusingly) use the non constrained
+%                     fit variable, which for this case has been done with the
+%                     passed constraint.
+%      'theIndictor' - String. Goes into input and output datafinames.
+%                     Default 'incDecFits'
+%      'aggregateFitName' - String. Use fits from aggregated data PF analysis.
+%                     This is the filename to use. Default empty, in which
+%                     case the default within session PF fits are used.
 %
 % See also: FitEllipseQ, PointsOnEllipseQ, EllipsoidMatricesGenerate.
 %
@@ -53,6 +62,8 @@ arguments
     options.theLim (1,1) double = 2;
     options.computationalName = '7_9_0'
     options.pfSlope = [];
+    options.theIndicator = 'incDecFits';
+    options.aggregateFitName = '';
 end
 
 %% Housekeeping
@@ -118,37 +129,57 @@ end
 %% Set up directories.
 %
 % Note that we're reading the output of the program
-% that fits psychometric functions, so the data comes from 'analysisDir'.
-analysisSubDir = sprintf('%s_%s_%s',normStr,corrGuessStr,reflInStr);
+% that fits psychometric functions, so the data comes from 'analysisInDir'.
 analysisBaseDir = getpref(baseProject,'analysisDir');
+analysisSubDir = sprintf('%s_%s_%s',normStr,corrGuessStr,reflInStr);
 analysisDir = fullfile(analysisBaseDir,subProject,options.subj,options.dataDate,options.condition,analysisSubDir);
-analysisOutDir = fullfile(analysisDir,sprintf('%s_%s',scaleDecrStr,reflOutStr));
+if (isempty(options.aggregateFitName))
+    analysisOutDir = fullfile(analysisDir,sprintf('%s_%s',scaleDecrStr,reflOutStr));
+else
+    analysisOutDir = fullfile(analysisDir,sprintf('%s_%s_%s',scaleDecrStr,reflOutStr,options.aggregateFitName));
+end
+
 if (~exist(analysisOutDir,'dir'))
     mkdir(analysisOutDir);
 end
 
 %% Read output of psychometric fitting
-if (isempty(options.pfSlope))
-    theData = load(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.mat',options.subj)));
+if (isempty(options.aggregateFitName))
+    if (isempty(options.pfSlope))
+        theData = load(fullfile(analysisDir,sprintf('%s_%s_ConstrainedSlope.mat',options.subj,options.theIndicator)));
+        thePFParams = theData.paramsFitted_Multi;
+    else
+        % Note that the fixed slope fit parameters are in
+        % theData.paramsFitted_Individual.
+        slopeStr = round(100*options.pfSlope);
+        theData = load(fullfile(analysisDir,sprintf('%s_%s_ConstrainedSlope_%d.mat',options.subj,options.theIndicator,slopeStr)));
+        thePFParams = theData.paramsFitted_Individual;
+    end
 else
-    slopeStr = round(100*options.pfSlope);
-    theData = load(fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope_%d.mat',options.subj,slopeStr)));
+    % In this case, parameters are in theData.paramsFittedAggregate.
+    theData = load(fullfile(analysisDir,sprintf('%s_%s_%s.mat',options.subj,options.theIndicator,options.aggregateFitName)));
+    thePFParams = theData.paramsFittedAggregate;
 end
 
 if isempty(theData)
     error('No fit data found');
 end
 
-%% Evaluate the PF and convert back to x,y coordinates for ellipse fitting
+%% Evaluate the PF
 %
 % First, round to the nearest .1 above the guess rate (code won't be happy if you
 % try to evaluate the PF for prop seen below the lower asymptote)
-PF = @PAL_Logistic;
-propEvalStart = ceil(10*theData.falsePosProp)/10;
+%
+% Note that the falsePosRate can vary with session if we don't correct for
+% guessing, which might cause this to break if it's ever run over data
+% aggregated over sessions.
+PF = theData.PF;
+propEvalStart = ceil(10*theData.sessionData{1}.falsePosRate)/10;
 propSeen_Fit = propEvalStart:.1:.9;
-modLevels_PF = nan(size(theData.paramsFitted_Multi,1), length(propSeen_Fit));
-for n = 1:size(theData.paramsFitted_Multi,1)
-    modLevels_PF(n,:) = 10.^PF(theData.paramsFitted_Multi(n,:), propSeen_Fit, 'inv');
+
+modLevels_PF = nan(size(thePFParams,1), length(propSeen_Fit));
+for n = 1:size(thePFParams,1)
+    modLevels_PF(n,:) = 10.^PF(thePFParams(n,:), propSeen_Fit, 'inv');
 end
 
 %% Get increment and decrement thresholds
@@ -247,7 +278,8 @@ ylim([-theLim theLim]);
 axis('square');
 xlabel('Contrast 1')
 ylabel('Contrast 2');
-print(theEllipseFig, fullfile(analysisOutDir,sprintf('%s_AllData.tiff', options.subj)), '-dtiff');
+print(theEllipseFig,fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_AllData.tiff', ...
+    options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
 
 %% Fit ellipse
 %
@@ -255,7 +287,7 @@ print(theEllipseFig, fullfile(analysisOutDir,sprintf('%s_AllData.tiff', options.
 % Can only do this if we have enough data.
 nCirclePoints = 100;
 circlePoints = UnitCircleGenerate(nCirclePoints);
-if (size(theDataToFit,1) > 4)
+if (size(theDataToFit, 2) > 4)
     [ellParams,A,Ainv,Q] = FitEllipseQ(theDataToFit,'lockAngleAt0',false,'errorScalar',errorScalar,'initialParams',[incrThresh(end) decrThresh(end) 45]);
 
     ellPoints = PointsOnEllipseQ(Q,circlePoints);
@@ -279,7 +311,8 @@ if (size(theDataToFit,1) > 4)
     axis('square');
     xlabel('Contrast 1')
     ylabel('Contrast 2');
-    print(theEllipseFig, fullfile(analysisOutDir,sprintf('%s_EllipseAllData.tiff', options.subj)), '-dtiff');
+    print(theEllipseFig, fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_EllipseAllData.tiff', ...
+        options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
 
     %% Fit ellipse with angle locked to just pure increment and decrement data
     neededAngles = [0 90 180 270];
@@ -301,9 +334,11 @@ if (size(theDataToFit,1) > 4)
     axis('square');
     xlabel('Contrast 1')
     ylabel('Contrast 2');
-    print(theEllipseFig0, fullfile(analysisOutDir,sprintf('%s_IncrAndDecrOnlyData.tiff', options.subj)), '-dtiff');
+    print(theEllipseFig0, fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_IncrAndDecrOnlyData.tiff', ...
+        options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
     plot(ellPoints0(1,:),ellPoints0(2,:),'r','LineWidth',2);
-    print(theEllipseFig0, fullfile(analysisOutDir,sprintf('%s_Ellipse0FitData.tiff', options.subj)), '-dtiff');
+    print(theEllipseFig0, fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_Ellipse0FitData.tiff', ...
+        options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
 
     % Add to plot of all data
     figure(theEllipseFig1);
@@ -316,8 +351,8 @@ if (size(theDataToFit,1) > 4)
     axis('square');
     xlabel('Contrast 1')
     ylabel('Contrast 2');
-    print(theEllipseFig1, fullfile(analysisOutDir,sprintf('%s_Ellipse0AllData.tiff', options.subj)), '-dtiff');
-
+    print(theEllipseFig1, fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_Ellipse0AllData.tiff', ...
+        options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
 end
 
 %% Get and fit ideal observer ellipse
@@ -350,10 +385,11 @@ ylim([-theLim theLim]);
 axis('square');
 xlabel('Contrast 1')
 ylabel('Contrast 2');
-print(theEllipseFig3, fullfile(analysisOutDir,sprintf('%s_%s_CompEllipse.tiff',options.subj,num2str(round(1000*options.defocusDiopters)))), '-dtiff');
-
+print(theEllipseFig3, fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_CompEllipse.tiff',...
+    options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
 plot(theDataToFit(1,:),theDataToFit(2,:),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
-print(theEllipseFig3, fullfile(analysisOutDir,sprintf('%s_%s_CompEllipseWithData.tiff',options.subj,num2str(round(1000*options.defocusDiopters)))), '-dtiff');
+print(theEllipseFig3, fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_CompEllipseWithData.tiff', ...
+    options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
 
 %% Build up some explanatory plots
 %
@@ -375,7 +411,8 @@ axis('square');
 xlabel('Contrast 1')
 ylabel('Contrast 2');
 title(sprintf('Subject %s, Criterion %d%%',options.subj,round(100*propsSeen)));
-print(theIncrFig, fullfile(analysisOutDir,sprintf('%s_SingleIncr.tiff', options.subj)), '-dtiff');
+print(theIncrFig, fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_SingleIncr.tiff', ...
+    options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
 
 %% Both incremental stimuli
 index = find(stimAnglesFit == 90);
@@ -386,7 +423,8 @@ if (iscell(theDataToFit))
 else
     plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
 end
-print(theIncrFig, fullfile(analysisOutDir,sprintf('%s_DoubleIncr.tiff', options.subj)), '-dtiff');
+print(theIncrFig, fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_DoubleIncr.tiff', ...
+    options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
 theIncrFig1 = theIncrFig.copy;
 figure(theIncrFig);
 
@@ -402,18 +440,21 @@ lineParams = [x ones(size(x))]\y;
 linePlotX = linspace(-theLim,theLim,100)';
 linePlotY = [linePlotX ones(size(linePlotX))]*lineParams;
 plot(linePlotX,linePlotY,'r','LineWidth',3);
-print(theIncrFig, fullfile(analysisOutDir,sprintf('%s_DoubleIncrWithLine.tiff', options.subj)), '-dtiff');
+print(theIncrFig, fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_DoubleIncrWithLine.tiff', ...
+    options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
 
 %% Add incr-incr datum
 index = find(stimAnglesFit == 45);
 plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
-print(theIncrFig, fullfile(analysisOutDir,sprintf('%s_IncrWithDoubleIncrLine.tiff', options.subj)), '-dtiff');
+print(theIncrFig, fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_IncrWithDoubleIncrLine.tiff', ...
+    options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
 
 %% Add incr-incr
 figure(theIncrFig1);
 index = find(stimAnglesFit == 45);
 plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
-print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_Incr.tiff', options.subj)), '-dtiff');
+print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_Incr.tiff', ...
+    options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
 
 %% Fit linear model to all the incremental data and plot
 neededAngles = [0 45 90];
@@ -432,7 +473,8 @@ end
 linePlotX = linspace(-theLim,theLim,100)';
 linePlotY = [linePlotX ones(size(linePlotX))]*lineParams;
 plot(linePlotX,linePlotY,'r','LineWidth',3);
-print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_IncrWithBestIncrLine.tiff', options.subj)), '-dtiff');
+print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_IncrWithBestIncrLine.tiff', ...
+    options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
 
 %% Add decr-decr points
 neededAngles = [180 225 270];
@@ -441,7 +483,8 @@ for aa = 1:length(neededAngles)
     index = [index find(stimAnglesFit == neededAngles(aa))];
 end
 plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
-print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_IncrAndDecrWithBestIncrLine.tiff', options.subj)), '-dtiff');
+print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_IncrAndDecrWithBestIncrLine.tiff', ...
+    options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
 
 %% Add decr-decr line
 neededAngles = [180 225 270];
@@ -460,13 +503,17 @@ end
 linePlotX = linspace(-theLim,theLim,100)';
 linePlotY = [linePlotX ones(size(linePlotX))]*lineParams;
 plot(linePlotX,linePlotY,'r','LineWidth',3);
-print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_IncrAndDecrWithBestIncrAndDecrLines.tiff', options.subj)), '-dtiff');
+print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_IncrAndDecrWithBestIncrAndDecrLines.tiff', ...
+    options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
 
 %% Add the critical incr-decr points
 index = find((stimAnglesFit > 90 & stimAnglesFit < 180) | (stimAnglesFit > 270 & stimAnglesFit < 360));
 plot(theDataToFit(1,index),theDataToFit(2,index),[theColors(1) 'o'],'MarkerFaceColor',theColors(1),'MarkerSize',12);
-print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_AllDataWithBestIncrAndDecrLines.tiff', options.subj)), '-dtiff');
+print(theIncrFig1, fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_AllDataWithBestIncrAndDecrLines.tiff', ...
+    options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)), '-dtiff');
 
 %% Save the data
 close all;
-save(fullfile(analysisOutDir,sprintf('%s_ContourAnalysis', options.subj)));
+save(fullfile(analysisOutDir,sprintf('%s_%s_D%s_P%d_ContourAnalysis', ...
+    options.subj,options.computationalName,num2str(round(1000*options.defocusDiopters)),options.pupilDiam)));
+

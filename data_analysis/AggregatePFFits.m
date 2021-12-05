@@ -21,23 +21,25 @@ psychoProject = 'AOPsychophysics';
 psychoBaseDir = getpref(psychoProject,'analysisDir');
 
 %% 11046, 7x9 data
-theFiles{1} = fullfile(psychoBaseDir,'IncrDecr1','11046','20200131','Separation_1','notnorm_corrguess_norefl','11046_incDecFits_ConstrainedSlope.mat');
-theFiles{2} = fullfile(psychoBaseDir,'IncrDecr2','11046','20210914','Size_1','notnorm_corrguess_norefl','11046_incDecFits_ConstrainedSlope.mat');
-theFiles{3} = fullfile(psychoBaseDir,'IncrDecr4','11046','20211026','Size_1','notnorm_corrguess_norefl','11046_incDecFits_ConstrainedSlope.mat');
-theFiles{4} = fullfile(psychoBaseDir,'IncrDecr5','11046','20211123','Size1_Sep0','notnorm_corrguess_norefl','11046_incDecFits_ConstrainedSlope.mat');
-theFiles{5} = fullfile(psychoBaseDir,'IncrDecr5','11046','20211123','Size1_Sep2','notnorm_corrguess_norefl','11046_incDecFits_ConstrainedSlope.mat');
-theFiles{6} = fullfile(psychoBaseDir,'IncrDecr5','11046','20211123','Size1_Sep4','notnorm_corrguess_norefl','11046_incDecFits_ConstrainedSlope.mat');
-theFiles{7} = fullfile(psychoBaseDir,'IncrDecr5','11046','20211123','Size1_Sep6','notnorm_corrguess_norefl','11046_incDecFits_ConstrainedSlope.mat');
-theFiles{8} = fullfile(psychoBaseDir,'IncrDecr5','11046','20211123','Size1_Sep8','notnorm_corrguess_norefl','11046_incDecFits_ConstrainedSlope.mat');
+theSubject = '11046';
+theIndicator = 'incDecFits';
+theFiles{1} = fullfile(psychoBaseDir,'IncrDecr1',theSubject,'20200131','Separation_1','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
+theFiles{2} = fullfile(psychoBaseDir,'IncrDecr2',theSubject,'20210914','Size_1','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
+theFiles{3} = fullfile(psychoBaseDir,'IncrDecr4',theSubject,'20211026','Size_1','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
+theFiles{4} = fullfile(psychoBaseDir,'IncrDecr5',theSubject,'20211123','Size1_Sep0','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
+theFiles{5} = fullfile(psychoBaseDir,'IncrDecr5',theSubject,'20211123','Size1_Sep2','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
+theFiles{6} = fullfile(psychoBaseDir,'IncrDecr5',theSubject,'20211123','Size1_Sep4','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
+theFiles{7} = fullfile(psychoBaseDir,'IncrDecr5',theSubject,'20211123','Size1_Sep6','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
+theFiles{8} = fullfile(psychoBaseDir,'IncrDecr5',theSubject,'20211123','Size1_Sep8','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
 
 %% Load in data from each session
 warnState = warning('off','MATLAB:load:cannotInstantiateLoadedVariable');
-sessionData = {};
+sessionData_All = {};
 stimAnglesFit = [];
 dirIndices = [];
 for ii = 1:length(theFiles)
     theData{ii} = load(theFiles{ii},'sessionData');
-    sessionData = { sessionData{:} theData{ii}.sessionData{:} };
+    sessionData_All = {sessionData_All{:} theData{ii}.sessionData{:} };
     for ss = 1:length(theData{ii}.sessionData)
         dirIndices = [dirIndices ii];
     end
@@ -45,11 +47,11 @@ end
 warning(warnState);
 
 %% Get data to fit into one big matrix
-for ss = 1:length(sessionData)
-    angles_All(ss) = sessionData{ss}.angle;
-    stimLevels_All(ss,:) = sessionData{ss}.stimLevels;
-    outOfNum_All(ss,:) = sessionData{ss}.outOfNum;
-    numPosFit_All(ss,:) = sessionData{ss}.numPosFit;
+for ss = 1:length(sessionData_All)
+    angles_All(ss) = sessionData_All{ss}.angle;
+    stimLevels_All(ss,:) = sessionData_All{ss}.stimLevels;
+    outOfNum_All(ss,:) = sessionData_All{ss}.outOfNum;
+    numPosFit_All(ss,:) = sessionData_All{ss}.numPosFit;
 end
 
 %% Fit the whole pile of data
@@ -58,9 +60,9 @@ end
 % correction for guessing, but not more generally.  Lapse
 % can be higher than usual after correction for guessing.
 PF = @PAL_Logistic;
-searchGrid = [log10(mean(stimLevels_All(:))) 5 0, 0.01];
+searchGrid = [log10(mean(stimLevels_All(:))) 15 0 0.01];
 paramsFittedAggregate_All = PAL_PFML_FitMultiple(log10(stimLevels_All), numPosFit_All, outOfNum_All, searchGrid, PF, 'slopes', 'constrained', 'guessrates', ...
-    'fixed', 'lapserates', 'constrained', 'lapselimits', [0 0.10]);
+    'fixed', 'lapserates', 'constrained', 'lapselimits', [0 0.05]);
 
 %% For PF evaluation
 xEval = linspace(0,10.^0.5,1000);
@@ -73,6 +75,7 @@ for dd = 1:length(theFiles)
     stimLevels = stimLevels_All(theIndices,:);
     outOfNum = outOfNum_All(theIndices,:);
     numPosFit = numPosFit_All(theIndices,:);
+    sessionData = { sessionData_All{theIndices} };
 
     % Plot for this dir
     pfFig = figure; hold on;
@@ -98,8 +101,9 @@ for dd = 1:length(theFiles)
     end
 
     % Save 
-    save(fullfile(sessionData{theIndices(1)}.dirName,'AggregatedPFFit.mat'),'paramsFittedAggregate','PF','stimAngleList','stimLevels','outOfNum','numPosFit');
-    print(pfFig, fullfile(sessionData{theIndices(1)}.dirName,'AggregatedPFPlot.tiff'), '-dtiff');
+    save(fullfile(sessionData_All{theIndices(1)}.dirName,sprintf('%s_%s_Aggregated.mat',theSubject,theIndicator)), ...
+        'sessionData','paramsFittedAggregate','PF','stimAngleList','stimLevels','outOfNum','numPosFit');
+    print(pfFig, fullfile(sessionData_All{theIndices(1)}.dirName,sprintf('%s_%s_AggregatedSlope.tiff',theSubject,theIndicator)), '-dtiff');
 end
 
 %% Close

@@ -30,7 +30,12 @@ function sessionData = fitPfsToIncrDecrData(options)
 %                     Default false.
 %      'fixedSlope' - Scalar. Fix psychopmetric function slope to this
 %                     value. Default value is [], which leaves slope free
-%                     in the fit.
+%                     in the fit.  When the slope is constrained,
+%                     round(100*slope) is appended to the filename, and the
+%                     slope constrained fit is performed as the one where each PF
+%                     is fit individually.  The fit with all slopes
+%                     consrained to be the same is not affected by this
+%                     option.
 %
 %   Data are fit with independent psychometric functions in each direction
 %   as well as with fits constrained across directions.  
@@ -103,7 +108,8 @@ if (~exist(analysisDir,'dir'))
     mkdir(analysisDir);
 end
 
-% Output mat file name
+% Output mat file name.  A suffix is appended if the fixedSlope has been
+% applied.
 if (isempty(options.fixedSlope))
     outFile = sprintf('%s_incDecFits_ConstrainedSlope.mat', options.subj);
 else
@@ -226,6 +232,9 @@ fprintf('False positive rate: %d out of %d; (%.2f percent)\n', numCatchPos, numC
 
 %% Compute PF for each modulation direction individually
 %
+% If set, the slope of the fit psychometric functions will be applied to
+% these fits.
+%
 % Convert absolute modulations into vector distance from the origin; can be
 % thought of ans an absolute modulation "magnitude"
 fprintf('Fitting modulation directions individually... ');
@@ -321,15 +330,19 @@ for angleNum = 1:length(stimAngleList)
     PF = @PAL_Logistic;
     falsePosRate = numCatchPosFit/numCatchTrials;
     searchGrid = [log10(mean(modulationVectorLengths)) 5 falsePosRate, 0.01];
+
+    % Handle fixed slope if it is set.
     if (isempty(options.fixedSlope))
         paramsFree = [1 1 0 0]; %[thresh slope guess lapse]; 0 = fixed; 1 = free
         paramsFitted_Individual(angleNum,:) = PAL_PFML_Fit(log10(stimLevels(angleNum,:)), numPosFit(angleNum,:), ...
             outOfNum(angleNum,:), searchGrid, paramsFree, PF);
     else
         paramsFree = [1 0 0 0]; %[thresh slope guess lapse]; 0 = fixed; 1 = free
+        searchGridTemp = searchGrid;
         searchGrid(2) = options.fixedSlope;
         paramsFitted_Individual(angleNum,:) = PAL_PFML_Fit(log10(stimLevels(angleNum,:)), numPosFit(angleNum,:), ...
             outOfNum(angleNum,:), searchGrid, paramsFree, PF);
+        searchGrid = searchGridTemp;
     end
     sessionData{angleNum}.falsePosRate = falsePosRate;
 
@@ -377,6 +390,9 @@ end
 fprintf('Done.\n');
 
 %% Fit everything together with slopes and guess/lapse rates to be equal across stimulus angles
+%
+% Somewhat confusingly, perhaps, the fixed slope is not applied to this
+% search.
 fprintf('Now fitting all angles with the same slope and guess rate... ');
 paramsFitted_Multi = PAL_PFML_FitMultiple(log10(stimLevels), numPosFit, outOfNum, searchGrid, PF, 'slopes', 'constrained', 'guessrates', ...
     'fixed', 'lapserates', 'constrained', 'lapselimits', [0 0.05]);
