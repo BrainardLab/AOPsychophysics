@@ -38,13 +38,16 @@ end
 
 %% Load in data from each session
 warnState = warning('off','MATLAB:load:cannotInstantiateLoadedVariable');
-theDataToFit = [];
+theDataFit = [];
 stimAnglesFit = [];
 for ii = 1:length(theFiles)
     theData{ii} = load(theFiles{ii},'theDataToFit','stimAnglesFit');
-    theDataToFit = [theDataToFit theData{ii}.theDataToFit];
+    theDataFit = [theDataFit theData{ii}.theDataToFit];
     stimAnglesFit = [stimAnglesFit theData{ii}.stimAnglesFit];
 end
+[stimAnglesFitCheckRadians,thresholdsFitCheck] = cart2pol(theDataFit(1,:),theDataFit(2,:));
+stimAnglesFitCheck = rad2deg(stimAnglesFitCheckRadians);
+thresholdsFit = vecnorm(theDataFit);
 warning(warnState);
 
 %% Plot the data
@@ -73,6 +76,17 @@ xlabel('Contrast 1')
 ylabel('Contrast 2');
 % print(theDataFig, fullfile(analysisOutDir,sprintf('%s_AllData.tiff', options.subj)), '-dtiff');
 
+%% Fit ellipse
+errorScalar = 1000;
+[ellParams,A,Ainv,ellQ] = FitEllipseQ(theDataFit,'lockAngleAt0',false,'errorScalar',errorScalar,'initialParams',[mean(thresholdsFit) mean(thresholdsFit) 0]);
+
+% Get points on ellipse
+nCirclePoints = 100;
+circlePoints = UnitCircleGenerate(nCirclePoints);
+ellPoints = PointsOnEllipseQ(ellQ,circlePoints);
+plot(ellPoints(1,:),ellPoints(2,:),'k','LineWidth',2);
+
+
 %% Read in ideal observer threshold contour and add to plot, after scaling
 compAnalysisInDir = fullfile(compBaseDir,sprintf('%s_%s_%d',computationalName,num2str(round(1000*defocusDiopters)),pupilDiam));
 if (~exist(compAnalysisInDir ,'dir'))
@@ -80,18 +94,41 @@ if (~exist(compAnalysisInDir ,'dir'))
 end
 compObserver = load(fullfile(compAnalysisInDir,sprintf('CompObserver_%s',computationalName)));
 
-nCirclePoints = 100;
-circlePoints = UnitCircleGenerate(nCirclePoints);
-
-circlePointsFit(1,:) = cosd(stimAnglesFit);
-circlePointsFit(2,:) = sind(stimAnglesFit);
-compObserverEllData = PointsOnEllipseQ(compObserver.compFitQ,circlePointsFit);
-for aa = 1:length(stimAnglesFit)
-    dataRadii(aa) = norm(theDataToFit(:,aa));
-    compRadii(aa) = norm(compObserverEllData(:,aa));
+% Scale comp observer ellipse to data
+decrScaleFactors = linspace(1,1.5,10);
+for dd = 1:length(decrScaleFactors)
+    circlePointsFit(1,:) = cosd(stimAnglesFit);
+    circlePointsFit(2,:) = sind(stimAnglesFit);
+    compObserverEllData = PointsOnEllipseQ(compObserver.compFitQ,circlePointsFit);
+    for jj = 1:size(compObserverEllData,2)
+        if (compObserverEllData(1,jj) < 0)
+            compObserverEllData(1,jj) = compObserverEllData(1,jj)/decrScaleFactors(dd);
+        end
+        if (compObserverEllData(2,jj) < 0)
+            compObserverEllData(2,jj) = compObserverEllData(2,jj)/decrScaleFactors(dd);
+        end
+    end
+    for aa = 1:length(stimAnglesFit)
+        dataRadii(aa) = norm(theDataFit(:,aa));
+        compRadii(aa) = norm(compObserverEllData(:,aa));
+    end
+    compFitFactor = compRadii'\dataRadii';
+    compObserverEllDataFit = compObserverEllData*compFitFactor;
+    fitError(dd) = sqrt(sum((theDataFit(:)-compObserverEllDataFit(:)).^2));
 end
-compFitFactor = compRadii'\dataRadii';
+[~,decrScaleIndex] = min(fitError);
+decrScaleFactor = decrScaleFactors(decrScaleIndex);
+
 compObserverEll = PointsOnEllipseQ(compObserver.compFitQ,circlePoints)*compFitFactor;
+for jj = 1:size(compObserverEllData,2)
+    if (compObserverEll(1,jj) < 0)
+        compObserverEll(1,jj) = compObserverEll(1,jj)/decrScaleFactor;
+    end
+    if (compObserverEll(2,jj) < 0)
+        compObserverEll(2,jj) = compObserverEll(2,jj)/decrScaleFactor;
+    end
+end
+
 %theEllipseFig3 = figure; hold on
 plot(compObserverEll(1,:),compObserverEll(2,:),'r','LineWidth',2);
 %title(sprintf('Subject %s, Criterion %d%%, Fit w/ Ideal, %0.2g D',options.subj,round(100*propsSeen),options.defocusDiopters));
