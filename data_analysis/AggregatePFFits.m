@@ -23,14 +23,34 @@ psychoBaseDir = getpref(psychoProject,'analysisDir');
 %% 11046, 7x9 data
 theSubject = '11046';
 theIndicator = 'incDecFits';
-theFiles{1} = fullfile(psychoBaseDir,'IncrDecr1',theSubject,'20200131','Separation_1','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
-theFiles{2} = fullfile(psychoBaseDir,'IncrDecr2',theSubject,'20210914','Size_1','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
-theFiles{3} = fullfile(psychoBaseDir,'IncrDecr4',theSubject,'20211026','Size_1','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
-theFiles{4} = fullfile(psychoBaseDir,'IncrDecr5',theSubject,'20211123','Size1_Sep0','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
-theFiles{5} = fullfile(psychoBaseDir,'IncrDecr5',theSubject,'20211123','Size1_Sep2','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
-theFiles{6} = fullfile(psychoBaseDir,'IncrDecr5',theSubject,'20211123','Size1_Sep4','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
-theFiles{7} = fullfile(psychoBaseDir,'IncrDecr5',theSubject,'20211123','Size1_Sep6','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
-theFiles{8} = fullfile(psychoBaseDir,'IncrDecr5',theSubject,'20211123','Size1_Sep8','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
+idx = 1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr1',theSubject,'20200131','Separation_1','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr2',theSubject,'20210914','Size_1','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr4',theSubject,'20211026','Size_1','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr5',theSubject,'20211123','Size1_Sep0','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr5',theSubject,'20211123','Size1_Sep2','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr5',theSubject,'20211123','Size1_Sep4','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr5',theSubject,'20211123','Size1_Sep6','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr5',theSubject,'20211123','Size1_Sep8','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir0_Sep0','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir45_Sep0','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir45_Sep4','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir45_Sep8','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir45_Sep12','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir45_Sep16','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir225_Sep0','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir225_Sep4','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir225_Sep8','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir225_Sep12','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir225_Sep16','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir270_Sep0','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir315_Sep0','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir315_Sep4','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir315_Sep8','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir315_Sep12','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+theFiles{idx} = fullfile(psychoBaseDir,'IncrDecr6',theSubject,'20211217','Dir315_Sep16','notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator)); idx = idx+1;
+
 
 %% Load in data from each session
 warnState = warning('off','MATLAB:load:cannotInstantiateLoadedVariable');
