@@ -270,6 +270,23 @@ for angleNum = 1:length(stimAngleList)
     sessionData{angleNum}.angle = stimAngleList(angleNum);
     sessionData{angleNum}.numCatchTrials = numCatchTrials;
     sessionData{angleNum}.numCatchPos = numCatchPos;
+    sessionData{angleNum}.stimHeight = expDataTemp.CFG.stimHeight;
+    sessionData{angleNum}.stimWidth = expDataTemp.CFG.stimWidth;
+    sessionData{angleNum}.centerToCenterSpacing = expDataTemp.CFG.stimCenterToCenterSpacings;
+    if (isfield(expDataTemp.CFG,'stimSeparationPixels'))
+         sessionData{angleNum}.stimSeparationPixels = expDataTemp.CFG.stimSeparationPixels;
+    else
+        sessionData{angleNum}.stimSeparationPixels = 0;
+    end
+    
+    % The angle list would be a useful check but is hard to parse because
+    % it doesn't include the reflection and the ordering isn't the same as
+    % what we recompute here.  So skipping. Could work on it and put it in.
+    % if (isfield(expDataTemp.CFG,'angleList'))
+    %      sessionData{angleNum}.angleFromList = expDataTemp.CFG.angleList(angleNum);
+    % else
+    %     sessionData{angleNum}.angleFromList  = [];
+    % end
 
     % Get data for this angle
     fitIndex = find(stimAngles==stimAngleList(angleNum));
