@@ -68,7 +68,7 @@ subProject = options.subProject;
 
 %% Load in the data files (update directories to wherever these data live on your machine)
 switch (options.subj)
-    case {'11043' '11046'}
+    case {'11002' '11043' '11046'}
         fprintf('Subject ID: %s\n', options.subj);
     otherwise
         error('Specified subject number invalid')
@@ -278,7 +278,7 @@ for angleNum = 1:length(stimAngleList)
     else
         sessionData{angleNum}.stimSeparationPixels = 0;
     end
-    
+
     % The angle list would be a useful check but is hard to parse because
     % it doesn't include the reflection and the ordering isn't the same as
     % what we recompute here.  So skipping. Could work on it and put it in.
