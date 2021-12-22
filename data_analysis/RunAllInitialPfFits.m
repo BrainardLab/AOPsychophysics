@@ -163,5 +163,16 @@ for cc = 1:length(theConds)
         'norm',false,'corrGuess',true,'refl',false);
 end
 
+% 6x8, 11002, separation 0
+theConds = {...
+    'Dir0_Sep0', ...
+    'Dir270_Sep0', ...
+    'Dir315_Sep0', ...
+    };
+for cc = 1:length(theConds)
+    fitPfsToIncrDecrData('subj','11002','dataDate','20211220','subProject','IncrDecr7_6x8','condition',theConds{cc}, ...
+        'norm',false,'corrGuess',true,'refl',false);
+end
+
 % Final close up.
 clear; close all;
