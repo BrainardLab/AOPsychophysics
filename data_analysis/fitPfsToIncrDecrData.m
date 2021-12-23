@@ -212,13 +212,7 @@ end
 % previous one to match the previous one.  Force list to be unique
 % within tolerance.
 angleTolerance = 2;
-for ii = 2:length(stimAnglesRaw)
-    for jj = 1:ii-1
-    	if (abs(stimAngles(ii)-stimAngles(jj)) < angleTolerance)
-            stimAngles(ii) = stimAngles(jj);
-        end
-    end
-end
+stimAngles = MatchEntriesToTolerance(stimAngles,angleTolerance);
 
 %% Compute the false positive rate
 %

@@ -219,6 +219,7 @@ for pp = 1:length(theData.stimAngleList)
     % This does the reflection.  Double up points on diagonal so that each
     % datum counts same number of times in the fit.
     if (options.reflOut)
+        error('Check the logic in this code before relying on it.  Looks funny.');
         stimXDataFit(index,:) = stimYDataFit(index-1,:);
         stimYDataFit(index,:) = stimXDataFit(index-1,:);
         if (stimXDataFit(index,end) == 0 & stimYDataFit(index,end) == 0)
