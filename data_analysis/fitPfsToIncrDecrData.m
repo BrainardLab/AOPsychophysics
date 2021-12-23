@@ -509,10 +509,3 @@ else
 end
 
 end
-
-%% Correct for guessing
-function [pCorrected] = CorrectForGuessing(pHit,pFA)
-
-pCorrected = (pHit-pFA)/(1-pFA);
-
-end

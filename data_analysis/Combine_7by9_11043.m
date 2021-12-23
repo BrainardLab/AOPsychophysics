@@ -14,7 +14,7 @@ clear; close all;
 theSubject = '11043';
 psychoProject = 'AOPsychophysics';
 psychoBaseDir = getpref(psychoProject,'analysisDir');
-dataFilename = '11002_incDecFits_Aggregated.mat';
+dataFilename = [theSubject '_incDecFits_Aggregated.mat'];
 
 % Computational observer parameters
 compProject = 'AOCompObserver';
@@ -31,10 +31,11 @@ INCRDECR_NORMALIZE = true;
 ANGLE_AVERAGE = true;
 REFLECT = false;
 angleTolerance = 1;
+PFInputDir = 'notnorm_notcorrguess_norefl';
 
 % Other params
 titleStr = '11043, 7x9';
-theLim = 2;
+theLim = 3;
 
 % Detailed data info
 sessionNames = {'IncrDecr1'};
@@ -47,7 +48,7 @@ stimWidthCheck = 9*ones(size(stimSeparationPixelsCheck));
 
 % Collect up the data file names
 for idx = 1:length(sessionNames)
-    theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,dateNames{idx},runNames{idx},'notnorm_corrguess_norefl',dataFilename);
+    theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,dateNames{idx},runNames{idx},PFInputDir,dataFilename);
 end
 
 %% Call the driver

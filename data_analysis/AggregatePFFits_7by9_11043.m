@@ -28,6 +28,12 @@ psychoBaseDir = getpref(psychoProject,'analysisDir');
 theSubject = '11043';
 theIndicator = 'incDecFits';
 
+%% Specify PF input
+%
+% Also set correction for guessing.
+CORR_GUESSING = true;
+PFInputDir = 'notnorm_notcorrguess_norefl';
+
 %% Criterion percent seen for threshold
 thresholdCriterion = 0.7;
 
@@ -46,7 +52,7 @@ stimWidthCheck = 9*ones(size(stimSeparationPixelsCheck));
 
 % Collect up the data file names
 for idx = 1:length(sessionNames)
-    theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,dateNames{idx},runNames{idx},'notnorm_corrguess_norefl',sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
+    theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,dateNames{idx},runNames{idx},PFInputDir,sprintf('%s_%s_ConstrainedSlope.mat',theSubject,theIndicator));
 end
 
 %% Run the driver

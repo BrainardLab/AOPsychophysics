@@ -76,15 +76,56 @@ for ss = 1:length(sessionData_All)
     stimSeparationPixels_All(ss) = sessionData_All{ss}.stimSeparationPixels;
 end
 
+%% Correct for guessing
+%
+% Here we can apply correction for guessing within each session,
+% which seems like a good idea for sessions where there were lots of
+% short runs, and thus not too many catch trials.
+if (CORR_GUESSING)
+    catchTrialColumn = 1;
+    uniqueSessions = unique(sessionNumbers_All);
+    for ss = 1:length(uniqueSessions)
+        % Get index for this session
+        thisSessionIndex = find(sessionNumbers_All == uniqueSessions(ss));
+
+        % We know catch trials are in first column, pull those out and get
+        % FA rate.
+        thisSessionNumPosCatch = sum(numPosFit_All(thisSessionIndex,catchTrialColumn));
+        thisSessionNumCatch = sum(outOfNum_All(thisSessionIndex,catchTrialColumn));
+        thisSessionPFA = thisSessionNumPosCatch/thisSessionNumCatch;
+
+        % Compute hit rate for all stimuli from this session.
+        thisSessionPHit = numPosFit_All(thisSessionIndex,:)./outOfNum_All(thisSessionIndex,:);
+
+        % Correct for each stimulus, routine CorrectForGuessing takes
+        % vectors in.
+        clear thisSessionPCorrected;
+        for ii = 1:size(thisSessionPHit,2)
+            thisSessionPCorrected(:,ii) = CorrectForGuessing(thisSessionPHit(:,ii),thisSessionPFA);
+
+            
+        end
+
+        % Convert back to integer num positive. A little rounding error here.
+        numPosFit_All(thisSessionIndex,:) = round(thisSessionPCorrected.*outOfNum_All(thisSessionIndex,:));
+    end
+end
+
 %% Fit the whole pile of data
 %
 % The constraint on the guess rate at 0 makes sense given
 % correction for guessing, but not more generally.  Lapse
 % can be higher than usual after correction for guessing.
 PF = @PAL_Logistic;
-initialParams = [log10(mean(stimLevels_All(:))) 15 0 0.01];
-initialAlphas = [0.5*log10(mean(stimLevels_All(:))) log10(mean(stimLevels_All(:))) 1.5*log10(mean(stimLevels_All(:)))];
-initialBetas = [7.5 15 22.5];
+if (~exist('initialParams','var') | isempty(initialParams))
+    initialParams = [log10(mean(stimLevels_All(:))) 15 0 0.01];
+end
+if (~exist('initialAlphas','var') | isempty(initialAlphas))
+    initialAlphas = [0.5*log10(mean(stimLevels_All(:))) log10(mean(stimLevels_All(:))) 1.5*log10(mean(stimLevels_All(:)))];
+end
+if (~exist('initialBetas','var') | isempty(initialBetas))
+    initialBetas = [7.5 15 22.5];
+end
 idx = 1;
 for aa = 1:length(initialAlphas)
     for bb = 1:length(initialBetas)

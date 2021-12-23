@@ -132,8 +132,8 @@ uniqueAngles = unique(stimAnglesFit);
 for aa = 1:length(uniqueAngles)
     index = find( (stimAnglesFit == uniqueAngles(aa)) & (separationsFit == 0) );
     thresholdContrast = mean(thresholdContrasts(index));
-    theDataFitAvg(1,index) = thresholdContrast.*cosd(uniqueAngles(aa));
-    theDataFitAvg(2,index) = thresholdContrast.*sind(uniqueAngles(aa));
+    theDataFitAvg(1,aa) = thresholdContrast.*cosd(uniqueAngles(aa));
+    theDataFitAvg(2,aa) = thresholdContrast.*sind(uniqueAngles(aa));
 end
 
 % Normalize incr/decr if desired
@@ -150,41 +150,6 @@ if (INCRDECR_NORMALIZE)
         theDataFitAvg(2,index) = theDataFitAvg(2,index)*uNormIncrData/uNormDecrData;
     end
 end
-
-%% Plot the data for 0 separation
-theColors = ['r' 'g' 'b' 'c' 'y'];
-theColor = 1;
-theDataFig = figure; clf; hold on;
-
-% Each session gets its own color, up to length of colors list
-for uu = 1:length(uniqueSessions)
-    theSessionIndex = find( (sessionNumbersFit == uniqueSessions(uu)) & (separationsFit == 0));
-    plot(theDataFit(1,theSessionIndex),theDataFit(2,theSessionIndex),[theColors(theColor) theMarkers(uu)],'MarkerFaceColor',theColors(theColor),'MarkerSize',theMarkerSizes(uu));
-    plot(theDataFitAvg(1,theSessionIndex),theDataFitAvg(2,theSessionIndex),['k' theMarkers(uu)],'MarkerFaceColor','k','MarkerSize',16);
-
-    % Cycle through colors
-    theColor = theColor + 1;
-    if (theColor > length(theColors))
-        theColor = 1;
-    end
-end
-title([titleStr ' Not Scaled']);
-plot([-theLim theLim],[0 0],'k:','LineWidth',1);
-plot([0 0],[-theLim theLim],'k:','LineWidth',1);
-xlim([-theLim theLim]);
-ylim([-theLim theLim]);
-axis('square');
-xlabel('Contrast 1')
-ylabel('Contrast 2');
-% print(theDataFig, fullfile(analysisOutDir,sprintf('%s_AllData.tiff', options.subj)), '-dtiff');
-
-%% Fit ellipse and add to plot
-% errorScalar = 1000;
-% [ellParams,A,Ainv,ellQ] = FitEllipseQ(theDataFit,'lockAngleAt0',false,'errorScalar',errorScalar,'initialParams',[mean(thresholdContrasts) mean(thresholdContrasts) 0]);
-% nCirclePoints = 100;
-% circlePoints = UnitCircleGenerate(nCirclePoints);
-% ellPoints = PointsOnEllipseQ(ellQ,circlePoints);
-% plot(ellPoints(1,:),ellPoints(2,:),'k:','LineWidth',1);
 
 %% Read in ideal observer threshold contour and add to plot, after scaling
 compAnalysisInDir = fullfile(compBaseDir,sprintf('%s_%s_%d',computationalName,num2str(round(1000*defocusDiopters)),pupilDiam));
@@ -215,10 +180,31 @@ compFitFactor = compRadii'\dataRadii';
 compObserverEllDataFit = compObserverEllData*compFitFactor;
 fitError = sqrt(sum((theDataFit(:)-compObserverEllDataFit(:)).^2));
 compObserverEll = PointsOnEllipseQ(compObserver.compFitQ,circlePoints)*compFitFactor;
-plot(compObserverEll(1,:),compObserverEll(2,:),'r','LineWidth',2);
 fprintf('Ideal observer scale factor: %0.3g\n',compFitFactor);
 
-% Finish up the plot
+%% Plot the data for 0 separation
+theColors = ['r' 'g' 'b' 'c' 'y'];
+theColor = 1;
+theDataFig = figure; clf; hold on;
+
+% Plot ellipse at bottom 
+plot(compObserverEll(1,:),compObserverEll(2,:),'r','LineWidth',2);
+
+% Then data averaged over each angle
+plot(theDataFitAvg(1,:),theDataFitAvg(2,:),'o','Color',[0.4 0.4 0.4],'MarkerFaceColor',[0.4 0.4 0.4],'MarkerSize',16);
+
+% Each session gets its own color, up to length of colors list
+for uu = 1:length(uniqueSessions)
+    theSessionIndex = find( (sessionNumbersFit == uniqueSessions(uu)) & (separationsFit == 0));
+    plot(theDataFit(1,theSessionIndex),theDataFit(2,theSessionIndex),[theColors(theColor) theMarkers(uu)],'MarkerFaceColor',theColors(theColor),'MarkerSize',theMarkerSizes(uu));
+
+    % Cycle through colors
+    theColor = theColor + 1;
+    if (theColor > length(theColors))
+        theColor = 1;
+    end
+end
+title([titleStr]);
 plot([-theLim theLim],[0 0],'k:','LineWidth',1);
 plot([0 0],[-theLim theLim],'k:','LineWidth',1);
 xlim([-theLim theLim]);
@@ -226,5 +212,14 @@ ylim([-theLim theLim]);
 axis('square');
 xlabel('Contrast 1')
 ylabel('Contrast 2');
-%print(theEllipseFig3, fullfile(analysisOutDir,sprintf('%s_%s_CompEllipse.tiff',options.subj,num2str(round(1000*options.defocusDiopters)))), '-dtiff');
-%print(theEllipseFig3, fullfile(analysisOutDir,sprintf('%s_%s_CompEllipseWithData.tiff',options.subj,num2str(round(1000*options.defocusDiopters)))), '-dtiff');
+% print(theDataFig, fullfile(analysisOutDir,sprintf('%s_AllData.tiff', options.subj)), '-dtiff');
+
+%% Fit ellipse and add to plot
+% errorScalar = 1000;
+% [ellParams,A,Ainv,ellQ] = FitEllipseQ(theDataFit,'lockAngleAt0',false,'errorScalar',errorScalar,'initialParams',[mean(thresholdContrasts) mean(thresholdContrasts) 0]);
+% nCirclePoints = 100;
+% circlePoints = UnitCircleGenerate(nCirclePoints);
+% ellPoints = PointsOnEllipseQ(ellQ,circlePoints);
+% plot(ellPoints(1,:),ellPoints(2,:),'k:','LineWidth',1);
+
+

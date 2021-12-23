@@ -6,22 +6,30 @@
 % the up-down and down-up configurations.  Sometimes
 % this is a cleaner way to look at it, and sometimes not.
 
+%% Clear and close
+clear; close all;
+
+%% Some parameters to set
+normData = false;
+reflectData = false;
+corrGuess = false;  
+
 %% 2020-01-31
 %
-% 7x9 pixel rectangular stimulus, 11043
-clear; close all;
+% 7x9 pixel rectangular stimulus, 11043 and 11046
+close all;
 fitPfsToIncrDecrData('subj','11043','dataDate','20200131','subProject','IncrDecr1','condition','Separation_1', ...
-    'norm',false,'corrGuess',true,'refl',false);
+    'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 fitPfsToIncrDecrData('subj','11046','dataDate','20200131','subProject','IncrDecr1','condition','Separation_1', ...
-    'norm',false,'corrGuess',true,'refl',false);
+    'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 
 %% 2021-09-14
 %
 % 7x9 pixel rectangular stimulus, 11046
 % This is a replication of the 2020-01-31 data.
-clear; close all;
+close all;
 fitPfsToIncrDecrData('subj','11046','dataDate','20210914','subProject','IncrDecr2','condition','Size_1', ...
-    'norm',false,'corrGuess',true,'refl',false);
+    'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 
 % 5x7 pixel rectangular stimulus, 11046
 %
@@ -34,17 +42,18 @@ fitPfsToIncrDecrData('subj','11046','dataDate','20210914','subProject','IncrDecr
 % little so it looks like there was a fully crossed stimulus design. Search
 % on string 9/14/21 to find the relevant code sections.
 %
+% close all;
 % fitPfsToIncrDecrData('subj','11046','dataDate','20210914','subProject','IncrDecr2','condition','Size_2', ...
-%     'norm',false,'corrGuess',true,'refl',false);
+%     'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 % fitPfsToIncrDecrData('subj','11046','dataDate','20210914','subProject','IncrDecr2','condition','Size_2', ...
-%     'norm',false,'corrGuess',true,'refl',false);
+%     'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 
 %% 2021-10-18
 %
 % 5x7 pixel rectangular stimulus, 11046
-% clear; close all;
+close all;
 fitPfsToIncrDecrData('subj','11046','dataDate','20211018','subProject','IncrDecr3','condition','Size_2', ...
-    'norm',false,'corrGuess',true,'refl',false);
+    'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 
 % 4x8 pixel rectangular stimulus, 11046
 % 
@@ -55,75 +64,57 @@ fitPfsToIncrDecrData('subj','11046','dataDate','20211018','subProject','IncrDecr
 % complaing about violation of the same number of levels in each direction.
 % I have not tracked that down.
 %
+% close all;
 % fitPfsToIncrDecrData('subj','11046','dataDate','20211018','subProject','IncrDecr2','condition','Size_3', ...
-%     'norm',false,'corrGuess',true,'refl',true);
+%     'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 % fitPfsToIncrDecrData('subj','11046','dataDate','20211018','subProject','IncrDecr2','condition','Size_3', ...
-%     'norm',false,'corrGuess',true,'refl',false);
+%     'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 
 %% 2021-10-26
 %
 % 5x7 pixel rectangular stimulus, 11046. 4th quadrant conditions
-% clear; close all;
+close all;
 fitPfsToIncrDecrData('subj','11046','dataDate','20211026','subProject','IncrDecr4','condition','Size_2', ...
-    'norm',false,'corrGuess',true,'refl',false);
+    'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 
 % 6x8 pixel rectangular stimulus, 11046. 4th quadrant conditions
-clear; close all;
+close all;
 fitPfsToIncrDecrData('subj','11046','dataDate','20211026','subProject','IncrDecr4','condition','Size_4', ...
-    'norm',false,'corrGuess',true,'refl',false);
+    'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 
 % 7x9 pixel rectangular stimulus, 11046. 4th quadrant conditions
-clear; close all;
+close all;
 fitPfsToIncrDecrData('subj','11046','dataDate','20211026','subProject','IncrDecr4','condition','Size_1', ...
-    'norm',false,'corrGuess',true,'refl',false);
+    'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 
 %% 2021-11-23
 %
-% 7x9 pixel rectangular stimulus, 11046. 315 degrees, 0, 2, 4, 6 8 pixel
-% separation
-clear; close all;
+% 7x9 pixel rectangular stimulus, 11046. 315 degrees, 0, 2, 4, 6, 8 pixel
+% separation.  No session normalizing data (0 and 270 deg) collected, which is a shame.
+close all;
 fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep0', ...
-    'norm',false,'corrGuess',true,'refl',false);
+    'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep2', ...
-    'norm',false,'corrGuess',true,'refl',false);
+    'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep4', ...
-    'norm',false,'corrGuess',true,'refl',false);
+    'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep6', ...
-    'norm',false,'corrGuess',true,'refl',false);
+    'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep8', ...
-    'norm',false,'corrGuess',true,'refl',false);
-
-% Fix slope to something reasonable
-% clear; close all;
-% theSlope = 12;
-% fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep0', ...
-%     'norm',false,'corrGuess',true,'refl',false,'fixedSlope',theSlope);
-% fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep2', ...
-%     'norm',false,'corrGuess',true,'refl',false,'fixedSlope',theSlope);
-% fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep4', ...
-%     'norm',false,'corrGuess',true,'refl',false,'fixedSlope',theSlope);
-% fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep6', ...
-%     'norm',false,'corrGuess',true,'refl',false,'fixedSlope',theSlope);
-% fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size1_Sep8', ...
-%     'norm',false,'corrGuess',true,'refl',false,'fixedSlope',theSlope);
+    'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 
 % 6x8 pixel rectangular stimulus, 11046. 315 degrees, 0 and 4 pixel
-% separation
-clear; close all;
+% separations.
+close all;
 fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size2_Sep0', ...
-    'norm',false,'corrGuess',true,'refl',false);
+    'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size2_Sep4', ...
-    'norm',false,'corrGuess',true,'refl',false);
+    'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 
-% Fix slope
-% clear; close all;
-% theSlope = 12;
-% fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size2_Sep0', ...
-%     'norm',false,'corrGuess',true,'refl',false,'fixedSlope',theSlope);
-% fitPfsToIncrDecrData('subj','11046','dataDate','20211123','subProject','IncrDecr5','condition','Size2_Sep4', ...
-%     'norm',false,'corrGuess',true,'refl',false,'fixedSlope',theSlope);
-
-% 7x9, 11046, separation series
+%% %% 2021-12-17
+%
+% 7x9, 11046, separation series. Two runs per direction/separation.
+close all;
 theConds = {...
     'Dir0_Sep0', ...
     'Dir45_Sep0', ...
@@ -145,10 +136,13 @@ theConds = {...
     };
 for cc = 1:length(theConds)
     fitPfsToIncrDecrData('subj','11046','dataDate','20211217','subProject','IncrDecr6','condition',theConds{cc}, ...
-        'norm',false,'corrGuess',true,'refl',false);
+        'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 end
 
-% 7x9, 11002, separation 0
+%% 2021-12-17
+%
+% 7x9, 11002, separation 0, around the ellipse.  Two runs per direction.
+close all;
 theConds = {...
     'Dir0_Sep0', ...
     'Dir45_Sep0', ...
@@ -160,10 +154,11 @@ theConds = {...
     };
 for cc = 1:length(theConds)
     fitPfsToIncrDecrData('subj','11002','dataDate','20211220','subProject','IncrDecr7_7x9','condition',theConds{cc}, ...
-        'norm',false,'corrGuess',true,'refl',false);
+        'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 end
 
-% 6x8, 11002, separation 0
+% 6x8, 11002, separation 0. Two runs per direction. Three directions. 
+close all;
 theConds = {...
     'Dir0_Sep0', ...
     'Dir270_Sep0', ...
@@ -171,8 +166,5 @@ theConds = {...
     };
 for cc = 1:length(theConds)
     fitPfsToIncrDecrData('subj','11002','dataDate','20211220','subProject','IncrDecr7_6x8','condition',theConds{cc}, ...
-        'norm',false,'corrGuess',true,'refl',false);
+        'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 end
-
-% Final close up.
-clear; close all;

@@ -14,13 +14,13 @@ clear; close all;
 theSubject = '11046';
 psychoProject = 'AOPsychophysics';
 psychoBaseDir = getpref(psychoProject,'analysisDir');
-dataFilename = '11046_incDecFits_Aggregated.mat';
+dataFilename = [theSubject '_incDecFits_Aggregated.mat'];
 
 % Computational observer parameters
 compProject = 'AOCompObserver';
 compBaseDir = getpref(compProject,'analysisDir');
 computationalName = '7_9_0';
-defocusDiopters = 0.10;
+defocusDiopters = 0.05;
 pupilDiam = 7;
 compFilename = sprintf('%s_%s_D%s_P%d_ContourAnalysis.mat', ...
     theSubject,computationalName,num2str(round(1000*defocusDiopters)),pupilDiam);
@@ -31,45 +31,41 @@ INCRDECR_NORMALIZE = true;
 ANGLE_AVERAGE = true;
 REFLECT = false;
 angleTolerance = 1;
+PFInputDir = 'notnorm_notcorrguess_norefl';
 
 % Other params
 titleStr = '11046, 7x9';
-theLim = 2;
+theLim = 3;
 
-% Specify sessions.
+% Data directory infor and associated condition information filled in by
+% hand
+%
+% Session numbers is an indicator variable so we can normalize within
+% session if desired.
 sessionNames = {'IncrDecr1', 'IncrDecr2', 'IncrDecr4', ...
     'IncrDecr5', 'IncrDecr5', 'IncrDecr5', 'IncrDecr5', 'IncrDecr5', ...
     'IncrDecr6', 'IncrDecr6', 'IncrDecr6', 'IncrDecr6', 'IncrDecr6', ...
     'IncrDecr6', 'IncrDecr6', 'IncrDecr6', 'IncrDecr6', 'IncrDecr6', ...
     'IncrDecr6', 'IncrDecr6', 'IncrDecr6', 'IncrDecr6', 'IncrDecr6', ...
     'IncrDecr6', 'IncrDecr6'};
+runNames = {'Separation_1', 'Size_1', 'Size_1', 'Size1_Sep0', 'Size1_Sep2', 'Size1_Sep4', ...
+    'Size1_Sep6', 'Size1_Sep8', 'Dir0_Sep0', 'Dir45_Sep0', 'Dir45_Sep4', 'Dir45_Sep8', ...
+    'Dir45_Sep12', 'Dir45_Sep16', 'Dir225_Sep0', 'Dir225_Sep4', 'Dir225_Sep8', 'Dir225_Sep12', ...
+    'Dir225_Sep16', 'Dir270_Sep0', 'Dir315_Sep0', 'Dir315_Sep4', 'Dir315_Sep8', 'Dir315_Sep12', ...
+    'Dir315_Sep16'};
+dateNames = {'20200131', '20210914', '20211026', '20211123', '20211123', '20211123', ...
+    '20211123', '20211123', '20211217', '20211217', '20211217', '20211217', '20211217', ...  
+    '20211217', '20211217', '20211217', '20211217', '20211217', '20211217', '20211217', ...   
+    '20211217', '20211217', '20211217', '20211217', '20211217'};
+sessionNumbers = [1 2 3 4 4 4 4 4 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5];
+stimSeparationPixelsCheck = [0 0 0 0 2 4 6 8 0 0 4 8 12 16 0 4 8 12 16 0 0 4 8 12 16];
+stimHeightCheck = 7*ones(size(stimSeparationPixelsCheck));
+stimWidthCheck = 9*ones(size(stimSeparationPixelsCheck));
 
-idx = 1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20200131','Separation_1','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20210914','Size_1','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211026','Size_1','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211123','Size1_Sep0','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211123','Size1_Sep2','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211123','Size1_Sep4','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211123','Size1_Sep6','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211123','Size1_Sep8','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir0_Sep0','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir45_Sep0','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir45_Sep4','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir45_Sep8','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir45_Sep12','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir45_Sep16','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir225_Sep0','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir225_Sep4','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir225_Sep8','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir225_Sep12','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir225_Sep16','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir270_Sep0','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir315_Sep0','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir315_Sep4','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir315_Sep8','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir315_Sep12','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
-theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,'20211217','Dir315_Sep16','notnorm_corrguess_norefl',dataFilename); idx = idx+1;
+% Collect up the data file names
+for idx = 1:length(sessionNames)
+    theFiles{idx} = fullfile(psychoBaseDir,sessionNames{idx},theSubject,dateNames{idx},runNames{idx},PFInputDir,dataFilename);
+end
 
 %% Call the driver
 CombineEllDriver;
