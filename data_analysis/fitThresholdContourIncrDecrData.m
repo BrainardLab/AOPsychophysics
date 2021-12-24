@@ -1,7 +1,7 @@
 function fitThresholdContourIncrDecrData(options)
 % fitThresholdContourIncrDecrData
 %
-% Script to combine data from inc/dec experiments and fit PFs to various
+% Function to combine data from inc/dec experiments and fit PFs to various
 % axes in the 2D stimulus space
 %
 %   Optional key/value pairs

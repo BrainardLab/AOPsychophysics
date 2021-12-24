@@ -17,6 +17,7 @@ sessionData_All = {};
 stimAnglesFit = [];
 dirIndices_All = [];
 sessionNumbers_All = [];
+dateNames_All = {};
 checkIndex = 1;
 firstSession = true;
 for ii = 1:length(theFiles)
@@ -26,6 +27,7 @@ for ii = 1:length(theFiles)
     % Session number check logic
     if (firstSession)
         currentSession = sessionNames{ii};
+        currentDateName = dateNames{ii};
         currentSessionNumber = sessionNumbers(ii);
         firstSession = false;
     end
@@ -35,14 +37,17 @@ for ii = 1:length(theFiles)
         end
     else
         currentSession = sessionNames{ii};
+        currentDateName = dateNames{ii};
         currentSessionNumber = sessionNumbers(ii);
     end
 
     % Sanity checks as well as create index from each session summary back to the
     % directory it was read from.
     for ss = 1:length(theData{ii}.sessionData)
+        % Session number and date
         sessionNumbers_All = [sessionNumbers_All currentSessionNumber];
-        
+        dateNames_All = {dateNames_All{:} currentDateName};
+
         % Check height
         if (theData{ii}.sessionData{ss}.stimHeight ~= stimHeightCheck(ii))
             error('Stim height check failure');
@@ -86,28 +91,26 @@ if (CORR_GUESSING)
     uniqueSessions = unique(sessionNumbers_All);
     for ss = 1:length(uniqueSessions)
         % Get index for this session
-        thisSessionIndex = find(sessionNumbers_All == uniqueSessions(ss));
+        sessionIndex = find(sessionNumbers_All == uniqueSessions(ss));
 
         % We know catch trials are in first column, pull those out and get
         % FA rate.
-        thisSessionNumPosCatch = sum(numPosFit_All(thisSessionIndex,catchTrialColumn));
-        thisSessionNumCatch = sum(outOfNum_All(thisSessionIndex,catchTrialColumn));
-        thisSessionPFA = thisSessionNumPosCatch/thisSessionNumCatch;
+        sessionNumPosCatch = sum(numPosFit_All(sessionIndex,catchTrialColumn));
+        sessionNumCatch = sum(outOfNum_All(sessionIndex,catchTrialColumn));
+        sessionPFA(ss) = sessionNumPosCatch/sessionNumCatch;
 
         % Compute hit rate for all stimuli from this session.
-        thisSessionPHit = numPosFit_All(thisSessionIndex,:)./outOfNum_All(thisSessionIndex,:);
+        thisSessionPHit = numPosFit_All(sessionIndex,:)./outOfNum_All(sessionIndex,:);
 
         % Correct for each stimulus, routine CorrectForGuessing takes
         % vectors in.
-        clear thisSessionPCorrected;
+        clear sessionPCorrected;
         for ii = 1:size(thisSessionPHit,2)
-            thisSessionPCorrected(:,ii) = CorrectForGuessing(thisSessionPHit(:,ii),thisSessionPFA);
-
-            
+            sessionPCorrected(:,ii) = CorrectForGuessing(thisSessionPHit(:,ii),sessionPFA(ss));
         end
 
         % Convert back to integer num positive. A little rounding error here.
-        numPosFit_All(thisSessionIndex,:) = round(thisSessionPCorrected.*outOfNum_All(thisSessionIndex,:));
+        numPosFit_All(sessionIndex,:) = round(sessionPCorrected.*outOfNum_All(sessionIndex,:));
     end
 end
 
@@ -154,6 +157,7 @@ for dd = 1:length(theFiles)
     stimWidthPixels = stimWidthPixels_All(theIndices);
     stimSeparationPixels = stimSeparationPixels_All(theIndices);
     sessionNumbers = sessionNumbers_All(theIndices);
+    dateNames = {dateNames_All{theIndices}};
     sessionData = { sessionData_All{theIndices} };
 
     % Plot for this dir.  Also aggregate up info on thresholds.  Make sure
@@ -161,9 +165,11 @@ for dd = 1:length(theFiles)
     % loop, because there are different numbers of angles in different
     % data files.
     pfFig = figure; hold on;
-    nXSubplots = ceil(sqrt(length(stimAngleList)));
-    nYSubplots = nXSubplots;
-    set(gcf, 'Color', 'w', 'Units', 'inches', 'Position', [1 1 11 11]);
+    % nXSubplots = ceil(sqrt(length(stimAngleList)));
+    % nYSubplots = nXSubplots;
+    nXSubplots = 5;
+    nYSubplots = 5;
+    set(gcf, 'Color', 'w', 'Units', 'inches', 'Position', [1 1 20 20]);
     whichSubplot = 1;
     clear thresholdCriteria thresholdContrasts thresholdXData thresholdYData
     for aa = 1:length(stimAngleList)
@@ -180,19 +186,25 @@ for dd = 1:length(theFiles)
         axis square
         xlabel('Log10 modulation intensity (au)', 'FontSize', 14);
         ylabel('Prop seen', 'FontSize', 14);
-        title(sprintf('Slope: %0.2f',paramsFittedAggregate(aa,2)));
 
         % Compute threshold data for this angle in this file
+        thresholdPFA(aa) = sessionPFA(sessionNumbers(aa));
         thresholdCriteria(aa) = thresholdCriterion;
         thresholdContrasts(aa) = 10.^PF(paramsFittedAggregate(aa,:), thresholdCriteria(aa), 'inv');
         thresholdXData(aa) = thresholdContrasts(aa)*cosd(stimAngleList(aa));
         thresholdYData(aa) = thresholdContrasts(aa)*sind(stimAngleList(aa));
+
+        % Add informative title
+        titleStr = {sprintf('%s, session %d, %s',theSubject,sessionNumbers(aa),dateNames{aa}), ...
+            sprintf('%d deg, %dx%d, sep %d',stimAngleList(aa),stimHeightPixels(aa),stimWidthPixels(aa),stimSeparationPixels(aa)), ...
+            sprintf('Thrsh: %0.2f, slope %0.2f, pFA: %0.2f',thresholdContrasts(aa),paramsFittedAggregate(aa,2),thresholdPFA(aa))};
+        title(titleStr);
     end
 
     % Save 
     save(fullfile(sessionData_All{theIndices(1)}.dirName,sprintf('%s_%s_Aggregated.mat',theSubject,theIndicator)), ...
         'sessionData','paramsFittedAggregate','PF','stimAngleList','stimLevels','outOfNum','numPosFit','stimHeightPixels', ...
-        'stimWidthPixels','stimSeparationPixels','sessionNumbers', ...
+        'stimWidthPixels','stimSeparationPixels','sessionNumbers', 'thresholdPFA', ...
         'thresholdCriteria','thresholdContrasts','thresholdXData','thresholdYData');
     print(pfFig, fullfile(sessionData_All{theIndices(1)}.dirName,sprintf('%s_%s_Aggregated.tiff',theSubject,theIndicator)), '-dtiff');
 end

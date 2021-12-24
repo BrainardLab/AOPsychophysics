@@ -5,7 +5,9 @@ function sessionData = fitPfsToIncrDecrData(options)
 %   sessionData = fitPfsToIncrDecrData(options);
 %
 % Description:
-%   Read in data from the AO inc/dec experiments and fit PFs.
+%   Read in data from the AO inc/dec experiments and fit PFs.  In the end,
+%   we have found we want to constrain fits across individual runs, so the
+%   main use of this routine is the data aggregation it does.
 %
 % Inputs:
 %   None.  Data location and filename obtained through key value pairs.
@@ -247,14 +249,14 @@ set(gcf, 'Color', 'w', 'Units', 'inches', 'Position', [1 1 12 4]);
 
 % And also into this one
 pfFig2 = figure; hold on;
-set(gcf, 'Color', 'w', 'Units', 'inches', 'Position', [1 1 11 11]);
+set(gcf, 'Color', 'w', 'Units', 'inches', 'Position', [1 1 20 20]);
 nXSubplots = ceil(sqrt(length(stimAngleList)));
 nYSubplots = nXSubplots;
 whichSubplot = 1;
 
 % For constrained fits
 pfFig3 = figure; hold on;
-set(gcf, 'Color', 'w', 'Units', 'inches', 'Position', [1 1 11 11]);
+set(gcf, 'Color', 'w', 'Units', 'inches', 'Position', [1 1 20 20]);
 
 % Go through all angles
 for angleNum = 1:length(stimAngleList)
@@ -497,15 +499,15 @@ set(ax3, 'Position', [0.7 0.110 0.3347*.66 0.8150])
 %% Save fit data to mat file
 if (isempty(options.fixedSlope))
     save(fullfile(analysisDir,outFile),'sessionData','stimAngleList','paramsFitted_Individual','paramsFitted_Multi','PF');
-    print(pfFig1, fullfile(analysisDir,sprintf('%s_incDecFits_Combined.tiff', options.subj)), '-dtiff');
+    print(pfFig1, fullfile(analysisDir,sprintf('%s_incDecFits_CombinedPlot.tiff', options.subj)), '-dtiff');
     print(pfFig2, fullfile(analysisDir,sprintf('%s_incDecFits_UnconstrainedSlope.tiff', options.subj)), '-dtiff');
     print(pfFig3, fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope.tiff', options.subj)), '-dtiff');
 else
     slopeSuffix = num2str(round(100*options.fixedSlope));
     save(fullfile(analysisDir,outFile),'sessionData','stimAngleList','paramsFitted_Individual','paramsFitted_Multi','PF');
-    print(pfFig1, fullfile(analysisDir,sprintf('%s_incDecFits_Combined_%s.tiff', options.subj,slopeSuffix)), '-dtiff');
-    print(pfFig2, fullfile(analysisDir,sprintf('%s_incDecFits_UnconstrainedSlope_%s.tiff', options.subj,slopeSuffix)), '-dtiff');
-    print(pfFig3, fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope_%s.tiff', options.subj,slopeSuffix)), '-dtiff');
+    print(pfFig1, fullfile(analysisDir,sprintf('%s_incDecFits_CombinedPlot_Slope%s.tiff', options.subj,slopeSuffix)), '-dtiff');
+    print(pfFig2, fullfile(analysisDir,sprintf('%s_incDecFits_Unconstrained_Slope%s.tiff', options.subj,slopeSuffix)), '-dtiff');
+    print(pfFig3, fullfile(analysisDir,sprintf('%s_incDecFits_ConstrainedSlope_Slope%s.tiff', options.subj,slopeSuffix)), '-dtiff');
 end
 
 end

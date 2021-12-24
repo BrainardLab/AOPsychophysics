@@ -1,10 +1,15 @@
-% RunAllPFFits
+% RunAllInitialPFFits
 %
-% Run all the PF fits.
+% Run all the initial PF fits.
 %
 % The refl option folds the data symmetrically over
 % the up-down and down-up configurations.  Sometimes
 % this is a cleaner way to look at it, and sometimes not.
+%
+% Currently, we run without correcting for guessing.  We don't
+% actually use these fits in the end.  Rather, this code serves
+% to organize the data in a way that we can then correct for
+% guessing across an entire session, rather than run by run.
 
 %% Clear and close
 clear; close all;
@@ -16,10 +21,12 @@ corrGuess = false;
 
 %% 2020-01-31
 %
-% 7x9 pixel rectangular stimulus, 11043 and 11046
+% 7x9 pixel rectangular stimulus, 11043
 close all;
 fitPfsToIncrDecrData('subj','11043','dataDate','20200131','subProject','IncrDecr1','condition','Separation_1', ...
     'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
+
+% 7x9 pixel rectangular stimulus, 11046
 fitPfsToIncrDecrData('subj','11046','dataDate','20200131','subProject','IncrDecr1','condition','Separation_1', ...
     'norm',normData,'corrGuess',corrGuess,'refl',reflectData);
 
