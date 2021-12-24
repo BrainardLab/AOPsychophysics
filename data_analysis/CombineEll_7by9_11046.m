@@ -1,4 +1,4 @@
-% Combine_7by9__11046
+% CombineEll_7by9__11046
 %
 % High level script to combine 7x9 data across sessions
 %
@@ -30,11 +30,11 @@ SESSION_NORMALIZE = true;
 INCRDECR_NORMALIZE = true;
 ANGLE_AVERAGE = true;
 REFLECT = false;
+FIT_FIRSTTHIRDONLY = true;
 angleTolerance = 1;
 PFInputDir = 'notnorm_notcorrguess_norefl';
 
 % Other params
-titleStr = '11046, 7x9';
 theLim = 3;
 
 % Data directory infor and associated condition information filled in by

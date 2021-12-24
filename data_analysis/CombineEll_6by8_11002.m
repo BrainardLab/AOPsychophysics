@@ -1,4 +1,4 @@
-% Combine_6by8__11002
+% CombineEll_6by8__11002
 %
 % High level script to combine 6x8 data across sessions
 %
@@ -30,11 +30,11 @@ SESSION_NORMALIZE = true;
 INCRDECR_NORMALIZE = true;
 ANGLE_AVERAGE = true;
 REFLECT = false;
+FIT_FIRSTTHIRDONLY = true;
 angleTolerance = 1;
 PFInputDir = 'notnorm_notcorrguess_norefl';
 
 % Other params
-titleStr = '11002, 6x8';
 theLim = 5;
 
 % Data directory infor and associated condition information filled in by

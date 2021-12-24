@@ -28,6 +28,11 @@ psychoBaseDir = getpref(psychoProject,'analysisDir');
 theSubject = '11046';
 theIndicator = 'incDecFits';
 
+%% PF initial guess for grid search
+initialParams = [];
+initialAlphas = [];
+initialBetas = [5 7 10 12 15];
+
 %% Specify PF input
 %
 % Also set correction for guessing.

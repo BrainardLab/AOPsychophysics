@@ -27,12 +27,7 @@ for ii = 1:length(theFiles)
         end
     end
     stimAnglesFit = [stimAnglesFit theData{ii}.stimAngleList];
-    while (any(stimAnglesFit < 0))
-        stimAnglesFit(stimAnglesFit < 0) = stimAnglesFit(stimAnglesFit < 0) + 360;
-    end
-    while (any(stimAnglesFit >= 360))
-        stimAnglesFit(stimAnglesFit >= 360) = stimAnglesFit(stimAnglesFit >= 360) - 360;
-    end
+    stimAnglesFit = CanonicalAngles(stimAnglesFit);
 
     % Deal with rouding error on angles if we reflected
     if (REFLECT)
@@ -119,6 +114,7 @@ for uu = 1:length(uniqueSessions)
     if (SESSION_NORMALIZE)
         if (sessionNormable(uu))
             theDataFit = theDataFit*uNormData/normData(uu);
+            thresholdContrasts = vecnorm(theDataFit);
         else
             % Adjust plot marker if not possible
             theMarkers(uu) = '*';
@@ -137,6 +133,7 @@ for aa = 1:length(uniqueAngles)
 end
 
 % Normalize incr/decr if desired
+oldUniqueAngles = unique(CanonicalAngles(atan2d(theDataFit(2,:),theDataFit(1,:))));
 if (INCRDECR_NORMALIZE)
     if (incrDecrNormable)
         index = find(theDataFit(1,:) < 0);
@@ -150,6 +147,7 @@ if (INCRDECR_NORMALIZE)
         theDataFitAvg(2,index) = theDataFitAvg(2,index)*uNormIncrData/uNormDecrData;
     end
 end
+newUniqueAngles = unique(CanonicalAngles(atan2d(theDataFit(2,:),theDataFit(1,:))));
 
 %% Read in ideal observer threshold contour and add to plot, after scaling
 compAnalysisInDir = fullfile(compBaseDir,sprintf('%s_%s_%d',computationalName,num2str(round(1000*defocusDiopters)),pupilDiam));
@@ -172,9 +170,20 @@ for jj = 1:size(compObserverEllData,2)
         compObserverEllData(2,jj) = compObserverEllData(2,jj);
     end
 end
+angleFitIndex = 1;
 for aa = 1:length(stimAnglesFit)
-    dataRadii(aa) = vecnorm(theDataFit(:,aa));
-    compRadii(aa) = vecnorm(compObserverEllData(:,aa));
+    if (FIT_FIRSTTHIRDONLY)
+        if ( (stimAnglesFit(aa) >= 0 & stimAnglesFit(aa) <= 90) | ...
+                (stimAnglesFit(aa) >= 180 & stimAnglesFit(aa) <= 270) )
+            dataRadii(angleFitIndex) = vecnorm(theDataFit(:,aa));
+            compRadii(angleFitIndex) = vecnorm(compObserverEllData(:,aa));
+            angleFitIndex = angleFitIndex+1;
+        end
+    else
+        dataRadii(angleFitIndex) = vecnorm(theDataFit(:,aa));
+        compRadii(angleFitIndex) = vecnorm(compObserverEllData(:,aa));
+        angleFitIndex = angleFitIndex+1;
+    end
 end
 compFitFactor = compRadii'\dataRadii';
 compObserverEllDataFit = compObserverEllData*compFitFactor;
@@ -182,7 +191,7 @@ fitError = sqrt(sum((theDataFit(:)-compObserverEllDataFit(:)).^2));
 compObserverEll = PointsOnEllipseQ(compObserver.compFitQ,circlePoints)*compFitFactor;
 fprintf('Ideal observer scale factor: %0.3g\n',compFitFactor);
 
-%% Plot the data for 0 separation
+%% Plot the data 
 theColors = ['r' 'g' 'b' 'c' 'y'];
 theColor = 1;
 theDataFig = figure; clf; hold on;
@@ -204,7 +213,9 @@ for uu = 1:length(uniqueSessions)
         theColor = 1;
     end
 end
-title([titleStr]);
+titleStr = LiteralUnderscore(sprintf('%s_%s_D%s_P%d', ...
+    theSubject,computationalName,num2str(round(1000*defocusDiopters)),pupilDiam));
+title(titleStr);
 plot([-theLim theLim],[0 0],'k:','LineWidth',1);
 plot([0 0],[-theLim theLim],'k:','LineWidth',1);
 xlim([-theLim theLim]);
@@ -212,7 +223,16 @@ ylim([-theLim theLim]);
 axis('square');
 xlabel('Contrast 1')
 ylabel('Contrast 2');
-% print(theDataFig, fullfile(analysisOutDir,sprintf('%s_AllData.tiff', options.subj)), '-dtiff');
+
+%% Save figure
+outDirname = 'aaCombinedEll';
+outputPath = fullfile(psychoBaseDir,outDirname);
+if (~exist(outputPath,'dir'))
+    mkdir(outputPath);
+end
+outputFilename = sprintf('%s_%s_D%s_P%d_Ellipse.tiff', ...
+    theSubject,computationalName,num2str(round(1000*defocusDiopters)),pupilDiam);
+print(theDataFig, fullfile(outputPath,outputFilename), '-dtiff');
 
 %% Fit ellipse and add to plot
 % errorScalar = 1000;

@@ -1,4 +1,4 @@
-% Combine_5by7__11046
+% CombineEll_6by8__11046
 %
 % High level script to combine 6x8 data across sessions
 %
@@ -19,7 +19,7 @@ dataFilename = [theSubject '_incDecFits_Aggregated.mat'];
 % Computational observer parameters
 compProject = 'AOCompObserver';
 compBaseDir = getpref(compProject,'analysisDir');
-computationalName = '5_7_0';
+computationalName = '6_8_0';
 defocusDiopters = 0.05;
 pupilDiam = 7;
 compFilename = sprintf('%s_%s_D%s_P%d_ContourAnalysis.mat', ...
@@ -30,11 +30,11 @@ SESSION_NORMALIZE = true;
 INCRDECR_NORMALIZE = true;
 ANGLE_AVERAGE = true;
 REFLECT = false;
+FIT_FIRSTTHIRDONLY = true;
 angleTolerance = 1;
 PFInputDir = 'notnorm_notcorrguess_norefl';
 
 % Other params
-titleStr = '11046, 5x7';
 theLim = 5;
 
 % Data directory infor and associated condition information filled in by
@@ -42,13 +42,13 @@ theLim = 5;
 %
 % Session numbers is an indicator variable so we can normalize within
 % session if desired.
-sessionNames = {'IncrDecr3', 'IncrDecr4'};
-runNames = {'Size_2', 'Size_2'};
-dateNames = {'20211018', '20211026'};
-sessionNumbers = [1 2];
-stimSeparationPixelsCheck = [0 0];
-stimHeightCheck = 5*ones(size(stimSeparationPixelsCheck));
-stimWidthCheck = 7*ones(size(stimSeparationPixelsCheck));
+sessionNames = {'IncrDecr4', 'IncrDecr5', 'IncrDecr5'};
+runNames = {'Size_4', 'Size2_Sep0', 'Size2_Sep4'};
+dateNames = {'20211026', '20211123', '20211123'};
+sessionNumbers = [1 2 2];
+stimSeparationPixelsCheck = [0 0 4];
+stimHeightCheck = 6*ones(size(stimSeparationPixelsCheck));
+stimWidthCheck = 8*ones(size(stimSeparationPixelsCheck));
 
 % Collect up the data file names
 for idx = 1:length(sessionNames)

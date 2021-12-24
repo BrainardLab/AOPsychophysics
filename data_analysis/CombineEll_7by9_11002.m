@@ -1,9 +1,9 @@
-% Combine_7by9_11043
+% CombineEll_7by9_11002
 %
 % High level script to combine 7x9 data across sessions
 %
 % This version for the 7x9 pixel spots, for
-% subject 11043.
+% subject 11002.
 
 %% Clear
 clear; close all;
@@ -11,7 +11,7 @@ clear; close all;
 %% Parameters
 %
 % Where's the analyzed data and precomputed computational observer output?
-theSubject = '11043';
+theSubject = '11002';
 psychoProject = 'AOPsychophysics';
 psychoBaseDir = getpref(psychoProject,'analysisDir');
 dataFilename = [theSubject '_incDecFits_Aggregated.mat'];
@@ -30,19 +30,22 @@ SESSION_NORMALIZE = true;
 INCRDECR_NORMALIZE = true;
 ANGLE_AVERAGE = true;
 REFLECT = false;
+FIT_FIRSTTHIRDONLY = true;
 angleTolerance = 1;
 PFInputDir = 'notnorm_notcorrguess_norefl';
 
 % Other params
-titleStr = '11043, 7x9';
 theLim = 3;
 
 % Detailed data info
-sessionNames = {'IncrDecr1'};
-runNames = {'Separation_1'};
-dateNames = {'20200131'};
-sessionNumbers = [1];
-stimSeparationPixelsCheck = [0];
+sessionNames = {'IncrDecr7_7x9', 'IncrDecr7_7x9', 'IncrDecr7_7x9', ...
+    'IncrDecr7_7x9', 'IncrDecr7_7x9', 'IncrDecr7_7x9', 'IncrDecr7_7x9'};
+runNames = {'Dir0_Sep0', 'Dir45_Sep0', 'Dir225_Sep0', ...
+    'Dir270_Sep0', 'Dir293_Sep0', 'Dir315_Sep0', 'Dir338_Sep0'};
+dateNames = {'20211220', '20211220', '20211220', ...
+    '20211220', '20211220', '20211220', '20211220'};
+sessionNumbers = [1 1 1 1 1 1 1];
+stimSeparationPixelsCheck = [0 0 0 0 0 0 0];
 stimHeightCheck = 7*ones(size(stimSeparationPixelsCheck));
 stimWidthCheck = 9*ones(size(stimSeparationPixelsCheck));
 
