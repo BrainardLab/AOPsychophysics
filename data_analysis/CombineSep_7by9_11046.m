@@ -34,6 +34,10 @@ FIT_FIRSTTHIRDONLY = true;
 angleTolerance = 1;
 PFInputDir = 'notnorm_notcorrguess_norefl';
 
+% Degrees per pixel
+degsPerPixel = 1/415;
+minPerPixel = 60*degsPerPixel;
+
 % Other params
 theLim = 3;
 

@@ -16,17 +16,9 @@ for ii = 1:length(theFiles)
 
     % Reflect stimulus angles around 45 degree line if desired.
     if (REFLECT)
-        for aa = 1:length(theData{ii}.stimAngleList)
-            if (theData{ii}.stimAngleList(aa) > 45 && theData{ii}.stimAngleList(aa) < 225)
-                delta = theData{ii}.stimAngleList(aa) - 45;
-                theData{ii}.stimAngleList(aa) = 45 - delta;
-            else
-                theData{ii}.stimAngleList(aa) = theData{ii}.stimAngleList(aa);
-            end
-        end
+        theData{ii}.stimAnglesList = ReflectAnglesAround45(theData{ii}.stimAnglesList);
     end
-    stimAnglesFit = [stimAnglesFit theData{ii}.stimAngleList];
-    stimAnglesFit = CanonicalAngles(stimAnglesFit);
+    stimAnglesFit = [stimAnglesFit CanonicalAngles(theData{ii}.stimAngleList)];
 
     % Deal with rouding error on angles if we reflected
     if (REFLECT)
