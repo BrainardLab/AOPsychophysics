@@ -83,15 +83,18 @@ for aa = 1:length(anglesToAnalyze)
     % Get comp observer points
     circlePointsFit(1,:) = cosd(anglesToAnalyze(aa));
     circlePointsFit(2,:) = sind(anglesToAnalyze(aa));
+    index = [];
     for ss = 1:length(compSeparations)
         tempData = PointsOnEllipseQ(compObserver{ss}.compFitQ,circlePointsFit);
         compObserverSepData(aa,ss) = vecnorm(tempData);
+        idx = find(compSeparations(ss) == uniqueSeparations);
+        index = [index idx];
+    end
 
-        % Add to regression data, optionally
-        if (regressIt & ~isempty(find(compSeparations(ss) == uniqueSeparations)))
-            regressData = [regressData ; thresholdContrastsAvg{aa}'];
-            regressComp = [regressComp ; compObserverSepData(aa,:)'];
-        end
+    % Add to regression data, optionally
+    if (regressIt)
+        regressData = [regressData ; thresholdContrastsAvg{aa}'];
+        regressComp = [regressComp ; compObserverSepData(aa,index)'];
     end
 end
 
@@ -104,7 +107,7 @@ compObserverSepDataScaled = compFitFactor*compObserverSepData;
 sepSmoothPoints = linspace(min(compSeparations),max(compSeparations),100);
 for aa = 1:length(anglesToAnalyze)
     % Smooth spline through the computational points
-    smoothingParameter = 0.9;
+    smoothingParameter = 0.96;
     fSpline = fit(compSeparations'*minPerPixel,compObserverSepDataScaled(aa,:)','smoothingspline','SmoothingParam',smoothingParameter);
     splinePredictions = feval(fSpline,sepSmoothPoints);
 

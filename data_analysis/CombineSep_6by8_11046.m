@@ -1,9 +1,12 @@
-% CombineSep_7by9__11046
+% CombineSep_6by8__11046
 %
-% High level script to combine 7x9 data across sessions
+% High level script to combine 6x8 data across sessions
 %
-% This version for the 7x9 pixel spots, for
+% This version for the 6x8 pixel spots, for
 % subject 11046.
+%
+% This is still using 7x9 data, just set it up to allow looking
+% at 6x8 computations.
 
 %% Clear
 clear; close all;
@@ -19,12 +22,12 @@ dataFilename = [theSubject '_incDecFits_Aggregated.mat'];
 % Computational observer parameters
 compProject = 'AOCompObserver';
 compBaseDir = getpref(compProject,'analysisDir');
-computationalName = '7_9';
+computationalName = '6_8';
 defocusDiopters = 0.05;
 pupilDiam = 7;
 compFilename = sprintf('%s_%s_D%s_P%d_ContourAnalysis.mat', ...
     theSubject,computationalName,num2str(round(1000*defocusDiopters)),pupilDiam);
-compSeparations = [0 1 2 3 4 5 6 8 12 16 20 24];
+compSeparations = [0 2 3 4 6 8 12 16];
 
 % Normalization, etc.
 SESSION_NORMALIZE = true;
