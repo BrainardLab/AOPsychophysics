@@ -54,12 +54,12 @@ for aa = 1:length(anglesToAnalyze)
 end
 
 %% Read in ideal observer threshold contour and scale to data
-for ss = 1:length(uniqueSeparations)
-    compAnalysisInDir = fullfile(compBaseDir,sprintf('%s_%d_%s_%d',computationalName,uniqueSeparations(ss),num2str(round(1000*defocusDiopters)),pupilDiam));
+for ss = 1:length(compSeparations)
+    compAnalysisInDir = fullfile(compBaseDir,sprintf('%s_%d_%s_%d',computationalName,compSeparations(ss),num2str(round(1000*defocusDiopters)),pupilDiam));
     if (~exist(compAnalysisInDir ,'dir'))
         error('Computational observer not yet run for specified diopters of defocus');
     end
-    compObserver{ss} = load(fullfile(compAnalysisInDir,sprintf('CompObserver_%s_%d',computationalName,uniqueSeparations(ss))));
+    compObserver{ss} = load(fullfile(compAnalysisInDir,sprintf('CompObserver_%s_%d',computationalName,compSeparations(ss))));
 end
 
 % For each angle to analyze, find comp observer threshold for each
@@ -72,7 +72,7 @@ for aa = 1:length(anglesToAnalyze)
     % angles in second and fourth quadrant if the flag is true.
     regressIt = false;
     if (FIT_FIRSTTHIRDONLY)
-        if ( (anglesToAnalyze(aa) >= 0   & anglesToAnalyze(aa) <= 90) | ...
+        if ( (anglesToAnalyze(aa) >= 0 & anglesToAnalyze(aa) <= 90) | ...
                 (anglesToAnalyze(aa) >= 180 & anglesToAnalyze(aa) <= 270) )
             regressIt = true;
         end
@@ -83,15 +83,15 @@ for aa = 1:length(anglesToAnalyze)
     % Get comp observer points
     circlePointsFit(1,:) = cosd(anglesToAnalyze(aa));
     circlePointsFit(2,:) = sind(anglesToAnalyze(aa));
-    for ss = 1:length(uniqueSeparations)
+    for ss = 1:length(compSeparations)
         tempData = PointsOnEllipseQ(compObserver{ss}.compFitQ,circlePointsFit);
         compObserverSepData(aa,ss) = vecnorm(tempData);
-    end
 
-    % Add to regression data, optionally
-    if (regressIt)
-        regressData = [regressData ; thresholdContrastsAvg{aa}'];
-        regressComp = [regressComp ; compObserverSepData(aa,:)'];
+        % Add to regression data, optionally
+        if (regressIt & ~isempty(find(compSeparations(ss) == uniqueSeparations)))
+            regressData = [regressData ; thresholdContrastsAvg{aa}'];
+            regressComp = [regressComp ; compObserverSepData(aa,:)'];
+        end
     end
 end
 
@@ -101,10 +101,17 @@ fprintf('Ideal observer scale factor: %0.3g\n',compFitFactor);
 compObserverSepDataScaled = compFitFactor*compObserverSepData;
 
 % Add scaled comp observer to plot
+sepSmoothPoints = linspace(min(compSeparations),max(compSeparations),100);
 for aa = 1:length(anglesToAnalyze)
+    % Smooth spline through the computational points
+    smoothingParameter = 0.9;
+    fSpline = fit(compSeparations'*minPerPixel,compObserverSepDataScaled(aa,:)','smoothingspline','SmoothingParam',smoothingParameter);
+    splinePredictions = feval(fSpline,sepSmoothPoints);
+
     % Set up subplot
     subplot(1,length(anglesToAnalyze),aa); hold on;
-    plot(uniqueSeparations*minPerPixel,compObserverSepDataScaled(aa,:),'r','LineWidth',2);
+    plot(compSeparations*minPerPixel,compObserverSepDataScaled(aa,:),'r*','MarkerSize',6);
+    plot(sepSmoothPoints,splinePredictions,'r','LineWidth',2);
 end
 
 %% Save figure
