@@ -20,7 +20,7 @@ dataFilename = [theSubject '_incDecFits_Aggregated.mat'];
 compProject = 'AOCompObserver';
 compBaseDir = getpref(compProject,'analysisDir');
 computationalName = '7_9';
-defocusDiopters = 0.05;
+defocusDiopters = 0.15;
 pupilDiam = 7;
 compFilename = sprintf('%s_%s_D%s_P%d_ContourAnalysis.mat', ...
     theSubject,computationalName,num2str(round(1000*defocusDiopters)),pupilDiam);

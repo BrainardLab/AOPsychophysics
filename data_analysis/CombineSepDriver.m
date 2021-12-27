@@ -10,9 +10,9 @@
 %% Do the preprocessing
 CombinePreprocess;
 
-%% Plot the data 
+%% Plot the data
 theColors = ['r' 'g' 'b' 'c' 'k' 'y'];
-theDataFig = figure; clf; 
+theDataFig = figure; clf;
 set(gcf, 'Color', 'w', 'Units', 'inches', 'Position', [1 1 18 6]);
 for aa = 1:length(anglesToAnalyze)
     % Set up subplot
@@ -30,14 +30,18 @@ for aa = 1:length(anglesToAnalyze)
         theFitDataAvgTemp = squeeze(theDataFitAvg(:,angleIndex,:));
         thresholdContrastsAvg{aa} = squeeze(mean(vecnorm(theFitDataAvgTemp),2));
     end
-    plot(uniqueSeparations*minPerPixel,thresholdContrastsAvg{aa},'o','Color',[0.4 0.4 0.4],'MarkerFaceColor',[0.4 0.4 0.4],'MarkerSize',16);
+    if (~exist('PLOT_DATA','var') | PLOT_DATA)
+        plot(uniqueSeparations*minPerPixel,thresholdContrastsAvg{aa},'o','Color',[0.4 0.4 0.4],'MarkerFaceColor',[0.4 0.4 0.4],'MarkerSize',16);
+    end
 
     % Find all data for this angle, and plot versus separation
     for uu = 1:length(uniqueSessions)
         index = find( (sessionNumbersFit == uniqueSessions(uu)) & (ReflectAnglesAround45(stimAnglesFit) == anglesToAnalyze(aa)));
         theThresholdsToPlot = vecnorm(theDataFit(:,index));
         separationsToPlot = separationsFit(index);
-        plot(separationsToPlot*minPerPixel,theThresholdsToPlot,[theColors(theColor) 'o'],'MarkerFaceColor',theColors(theColor),'MarkerSize',6);
+        if (~exist('PLOT_DATA','var') | PLOT_DATA)
+            plot(separationsToPlot*minPerPixel,theThresholdsToPlot,[theColors(theColor) 'o'],'MarkerFaceColor',theColors(theColor),'MarkerSize',6);
+        end
 
         % Cycle through colors
         theColor = theColor + 1;
@@ -45,7 +49,9 @@ for aa = 1:length(anglesToAnalyze)
             theColor = 1;
         end
     end
-    xlim([0 20*minPerPixel]); xlabel('Separation (arcmin)');
+
+    % Plot tidy
+    xlim([0 max(compSeparations)*minPerPixel]); xlabel('Separation (arcmin)');
     ylim([0 theLim]); ylabel('Threshold Contrast');
     titleStr = { LiteralUnderscore(sprintf('%s_%s_D%s_P%d', ...
         theSubject,computationalName,num2str(round(1000*defocusDiopters)),pupilDiam)) , ...
@@ -53,13 +59,18 @@ for aa = 1:length(anglesToAnalyze)
     title(titleStr);
 end
 
+
+
 %% Read in ideal observer threshold contour and scale to data
 for ss = 1:length(compSeparations)
     compAnalysisInDir = fullfile(compBaseDir,sprintf('%s_%d_%s_%d',computationalName,compSeparations(ss),num2str(round(1000*defocusDiopters)),pupilDiam));
     if (~exist(compAnalysisInDir ,'dir'))
         error('Computational observer not yet run for specified diopters of defocus');
     end
+    warnState = warning('off','MATLAB:load:cannotInstantiateLoadedVariable');
     compObserver{ss} = load(fullfile(compAnalysisInDir,sprintf('CompObserver_%s_%d',computationalName,compSeparations(ss))));
+    warning(warnState);
+
 end
 
 % For each angle to analyze, find comp observer threshold for each
@@ -107,14 +118,14 @@ compObserverSepDataScaled = compFitFactor*compObserverSepData;
 sepSmoothPoints = linspace(min(compSeparations),max(compSeparations),100);
 for aa = 1:length(anglesToAnalyze)
     % Smooth spline through the computational points
-    smoothingParameter = 0.96;
+    smoothingParameter = 0.94;
     fSpline = fit(compSeparations'*minPerPixel,compObserverSepDataScaled(aa,:)','smoothingspline','SmoothingParam',smoothingParameter);
     splinePredictions = feval(fSpline,sepSmoothPoints);
 
     % Set up subplot
     subplot(1,length(anglesToAnalyze),aa); hold on;
     plot(compSeparations*minPerPixel,compObserverSepDataScaled(aa,:),'r*','MarkerSize',6);
-    plot(sepSmoothPoints,splinePredictions,'r','LineWidth',2);
+    plot(sepSmoothPoints,splinePredictions,'r','LineWidth',3);
 end
 
 %% Save figure
