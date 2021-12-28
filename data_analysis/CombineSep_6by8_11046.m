@@ -23,11 +23,11 @@ dataFilename = [theSubject '_incDecFits_Aggregated.mat'];
 compProject = 'AOCompObserver';
 compBaseDir = getpref(compProject,'analysisDir');
 computationalName = '6_8';
-defocusDiopters = 0.10;
+defocusDiopters = 0.15;
 pupilDiam = 7;
 compFilename = sprintf('%s_%s_D%s_P%d_ContourAnalysis.mat', ...
     theSubject,computationalName,num2str(round(1000*defocusDiopters)),pupilDiam);
-compSeparations = [0 2 3 4 5 6 8 12 16 20 24];
+compSeparations = [0 1 2 3 4 5 6 8 12 16 20 24];
 
 % Normalization, etc.
 SESSION_NORMALIZE = true;
