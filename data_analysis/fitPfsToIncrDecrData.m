@@ -70,7 +70,7 @@ subProject = options.subProject;
 
 %% Load in the data files (update directories to wherever these data live on your machine)
 switch (options.subj)
-    case {'11002' '11043' '11046'}
+    case {'11002' '11043' '11046', '11108'}
         fprintf('Subject ID: %s\n', options.subj);
     otherwise
         error('Specified subject number invalid')
