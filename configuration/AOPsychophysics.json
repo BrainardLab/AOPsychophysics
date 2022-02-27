@@ -25,19 +25,19 @@
 		"update": "",
 		"url": ""
 	},
-	{
-		"flavor": "",
-		"hook": "",
-		"importance": "",
-		"localHookTemplate": "",
-		"name": "Palamedes_1.9.0",
-		"pathPlacement": "append",
-		"subfolder": "",
-		"toolboxRoot": "",
-		"type": "webget",
-		"update": "never",
-		"url": "http://www.palamedestoolbox.org/sitebuildercontent/sitebuilderfiles/palamedes1_9_0.zip"
-	},
+    {
+        "flavor": "",
+        "hook": "",
+        "importance": "",
+        "localHookTemplate": "",
+        "name": "Palamedes",
+        "pathPlacement": "append",
+        "subfolder": "",
+        "toolboxRoot": "",
+        "type": "webget",
+        "update": "never",
+        "url": ""
+    },
     {
 		"flavor": "",
 		"hook": "",
