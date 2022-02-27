@@ -49,19 +49,46 @@ for ii = 1:length(theFiles)
         dateNames_All = {dateNames_All{:} currentDateName};
 
         % Check height
-        if (theData{ii}.sessionData{ss}.stimHeight ~= stimHeightCheck(ii))
-            error('Stim height check failure');
+        if (exist('stimHeightCheck','var') & ~isempty(stimHeightCheck))
+            if (length(stimHeightCheck) ~= length(theFiles))
+                error('Wrong length for stimHeightCheck');
+            end
+            if (theData{ii}.sessionData{ss}.stimHeight ~= stimHeightCheck(ii))
+                error('Stim height check failure');
+            end
         end
 
         % Check width
-        if (theData{ii}.sessionData{ss}.stimWidth ~= stimWidthCheck(ii))
-            error('Stim width check failure');
+        if (exist('stimWidthCheck','var') & ~isempty(stimWidthCheck))
+            if (length(stimWidthCheck) ~= length(theFiles))
+                error('Wrong length for stimWidthCheck');
+            end
+            if (theData{ii}.sessionData{ss}.stimWidth ~= stimWidthCheck(ii))
+                error('Stim width check failure');
+            end
         end
 
         % This check assumes only one separation per directory, which is
         % currently true of our data collection practice.
-        if (theData{ii}.sessionData{ss}.stimSeparationPixels ~= stimSeparationPixelsCheck(ii))
-            error('Stim separation check failure');
+        if (exist('stimSeparationPixelsCheck','var') & ~isempty(stimSeparationPixelsCheck))
+            if (length(stimSeparationPixelsCheck) ~= length(theFiles))
+                error('Wrong length for stimSeparationPixelsCheck');
+            end
+            if (theData{ii}.sessionData{ss}.stimSeparationPixels ~= stimSeparationPixelsCheck(ii))
+                error('Stim separation check failure');
+            end
+        end
+
+        % This check assumes only one angle per directory, which is
+        % currently true of our data collection practice.
+        if (exist('stimAngleCheck','var') & ~isempty(stimAngleCheck))
+            if (length(stimAngleCheck) ~= length(theFiles))
+                error('Wrong length for stimAngleCheckstimAngleCheck');
+            end
+            if (theData{ii}.sessionData{ss}.angle ~= stimAngleCheck(ii) & ...
+                ReflectAnglesAround45(theData{ii}.sessionData{ss}.angle) ~= stimAngleCheck(ii))
+                error('Stim separation check failure');
+            end
         end
 
         % Preserve indices into individual aggregated files
