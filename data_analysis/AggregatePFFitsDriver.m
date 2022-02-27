@@ -30,16 +30,17 @@ for ii = 1:length(theFiles)
         currentDateName = dateNames{ii};
         currentSessionNumber = sessionNumbers(ii);
         firstSession = false;
-    end
-    if (strcmp(sessionNames{ii},currentSession))
-        if (sessionNumbers(ii) ~= currentSessionNumber)
-            error('Session name/number mismatch');
-        end
     else
         currentSession = sessionNames{ii};
         currentDateName = dateNames{ii};
         currentSessionNumber = sessionNumbers(ii);
     end
+    if (strcmp(sessionNames{ii},currentSession))
+        if (sessionNumbers(ii) ~= currentSessionNumber)
+            error('Session name/number mismatch');
+        end
+    end
+    
 
     % Sanity checks as well as create index from each session summary back to the
     % directory it was read from.

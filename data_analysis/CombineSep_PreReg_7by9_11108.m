@@ -1,9 +1,9 @@
-% CombineSep_PreReg_7by9_11046
+% CombineSep_PreReg_7by9_11108
 %
 % High level script to combine 7x9 data across sessions
 %
 % This version for the 7x9 pixel spots, for
-% subject 11046.
+% subject 11108.
 
 %% Clear
 clear; close all;
@@ -11,7 +11,7 @@ clear; close all;
 %% Parameters
 %
 % Where's the analyzed data and precomputed computational observer output?
-theSubject = '11046';
+theSubject = '11108';
 psychoProject = 'AOPsychophysics';
 psychoBaseDir = getpref(psychoProject,'analysisDir');
 dataFilename = [theSubject '_incDecFits_Aggregated.mat'];
@@ -43,7 +43,7 @@ minPerPixel = 60*degsPerPixel;
 theLim = 3;
 
 % Specify conditions, etc.
-DataSpec_PreReg_7by9_11046;
+DataSpec_PreReg_7by9_11108;
 
 % Hand specification of which stimlus angles to plot separation series for
 anglesToAnalyze = [45 225 315];

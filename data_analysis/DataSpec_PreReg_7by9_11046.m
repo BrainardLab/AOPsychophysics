@@ -37,10 +37,11 @@ dateNames = {'20220211', ...
     '20220223', '20220223', '20220223', '20220223', '20220223', '20220223', '20220223', ...
     '20220223', ...
     '20220223', '20220223', '20220223', '20220223', '20220223', '20220223', '20220223'};
-sessionNumbers = [1*ones(size(sessionNames)) 2*ones(size(sessionNames))];
 stimSeparationPixelsCheckRaw = [0 0 2 4 7 13 24 45 0 2 4 7 13 24 45 0 0 2 4 7 13 24 45];
 stimSeparationPixelsCheck = [stimSeparationPixelsCheckRaw stimSeparationPixelsCheckRaw];
 stimAngleCheckRaw = [0 45 45 45 45 45 45 45 225 225 225 225 225 225 225 270 315 315 315 315 315 315 315];
 stimAngleCheck = [stimAngleCheckRaw stimAngleCheckRaw];
 stimHeightCheck = 7*ones(size(stimSeparationPixelsCheck));
 stimWidthCheck = 9*ones(size(stimSeparationPixelsCheck));
+sessionNumbers = [1*ones(size(stimSeparationPixelsCheckRaw)) 2*ones(size(stimSeparationPixelsCheckRaw))];
+
