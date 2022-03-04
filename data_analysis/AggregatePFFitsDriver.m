@@ -147,12 +147,13 @@ end
 % The constraint on the guess rate at 0 makes sense given
 % correction for guessing, but not more generally.  Lapse
 % can be higher than usual after correction for guessing.
+stimLevels_Guess = stimLevels_All(:,2:end);
 PF = @PAL_Logistic;
 if (~exist('initialParams','var') | isempty(initialParams))
-    initialParams = [log10(mean(stimLevels_All(:))) 15 0 0.01];
+    initialParams = [log10(mean(stimLevels_Guess(:))) 15 0 0.01];
 end
 if (~exist('initialAlphas','var') | isempty(initialAlphas))
-    initialAlphas = [0.5*log10(mean(stimLevels_All(:))) log10(mean(stimLevels_All(:))) 1.5*log10(mean(stimLevels_All(:)))];
+    initialAlphas = [log10(1.1*min(stimLevels_Guess(:))) log10(mean(stimLevels_Guess(:))) log10(0.9*max(stimLevels_Guess(:)))];
 end
 if (~exist('initialBetas','var') | isempty(initialBetas))
     initialBetas = [7.5 15 22.5];

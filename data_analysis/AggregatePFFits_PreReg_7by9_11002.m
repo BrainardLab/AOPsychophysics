@@ -30,7 +30,7 @@ theIndicator = 'incDecFits';
 %% PF initial guess for grid search
 initialParams = [];
 initialAlphas = [];
-initialBetas = [5 7 10 12 15];
+initialBetas = [5 7 10 12 15 20];
 
 %% Specify PF input
 %
