@@ -147,29 +147,33 @@ end
 % The constraint on the guess rate at 0 makes sense given
 % correction for guessing, but not more generally.  Lapse
 % can be higher than usual after correction for guessing.
-stimLevels_Guess = stimLevels_All(:,2:end);
-PF = @PAL_Logistic;
-if (~exist('initialParams','var') | isempty(initialParams))
-    initialParams = [log10(mean(stimLevels_Guess(:))) 15 0 0.01];
-end
-if (~exist('initialAlphas','var') | isempty(initialAlphas))
-    initialAlphas = [log10(1.1*min(stimLevels_Guess(:))) log10(mean(stimLevels_Guess(:))) log10(0.9*max(stimLevels_Guess(:)))];
-end
-if (~exist('initialBetas','var') | isempty(initialBetas))
-    initialBetas = [7.5 15 22.5];
-end
-idx = 1;
-for aa = 1:length(initialAlphas)
-    for bb = 1:length(initialBetas)
-        initialParams(1) = initialAlphas(aa);
-        initialParams(2) = initialBetas(bb);
-        [paramsFittedAggregate_Temp{idx} LL(idx)] = PAL_PFML_FitMultiple(log10(stimLevels_All), numPosFit_All, outOfNum_All, initialParams, PF, 'slopes', 'constrained', 'guessrates', ...
-            'fixed', 'lapserates', 'constrained', 'lapselimits', [0 0.05]);
-        idx = idx+1;
+for ss = 1:length(uniqueSessions)
+    sessionIndex = find(sessionNumbers_All == uniqueSessions(ss));
+    stimLevels_Fit = stimLevels_All(sessionIndex,:);
+    stimLevels_Guess = stimLevels_Fit(:,2:end);
+    PF = @PAL_Logistic;
+    if (~exist('initialParams','var') | isempty(initialParams))
+        initialParams = [log10(mean(stimLevels_Guess(:))) 15 0 0.01];
     end
+    if (~exist('initialAlphas','var') | isempty(initialAlphas))
+        initialAlphas = [log10(1.1*min(stimLevels_Guess(:))) log10(mean(stimLevels_Guess(:))) log10(0.9*max(stimLevels_Guess(:)))];
+    end
+    if (~exist('initialBetas','var') | isempty(initialBetas))
+        initialBetas = [7.5 15 22.5];
+    end
+    idx = 1;
+    for aa = 1:length(initialAlphas)
+        for bb = 1:length(initialBetas)
+            initialParams(1) = initialAlphas(aa);
+            initialParams(2) = initialBetas(bb);
+            [paramsFittedAggregate_Temp{idx} LL(idx)] = PAL_PFML_FitMultiple(log10(stimLevels_Fit), numPosFit_All(sessionIndex,:), outOfNum_All(sessionIndex,:), initialParams, PF, 'slopes', 'constrained', 'guessrates', ...
+                'fixed', 'lapserates', 'constrained', 'lapselimits', [0 0.05]);
+            idx = idx+1;
+        end
+    end
+    [~,whichIdx] = max(LL);
+    paramsFittedAggregate_All(sessionIndex,:) = paramsFittedAggregate_Temp{whichIdx};
 end
-[~,whichIdx] = max(LL);
-paramsFittedAggregate_All = paramsFittedAggregate_Temp{whichIdx};
 
 %% For PF evaluation
 xEval = linspace(0,10.^0.5,1000);
