@@ -24,6 +24,7 @@ theDataFig = figure; clf;
 set(gcf, 'Color', 'w', 'Units', 'inches', 'Position', [1 1 18 6]);
 for aa = 1:length(anglesToAnalyze)
     % Set up subplot
+    figure(theDataFig);
     subplot(1,length(anglesToAnalyze),aa); hold on;
     theColor = 1;
 
@@ -73,8 +74,8 @@ for aa = 1:length(anglesToAnalyze)
     title(titleStr);
 
     % Fit smooth spline through data
-    dataSmoothingParam(aa) = 0.999;
-    dataFitObj{aa} = fit(allSeparations{aa}',allThresholds{aa}','smoothingspline','smoothingparam',dataSmoothingParam(aa));
+    initialSmoothingParam = 0.9;
+    [dataFitObj{aa},ataSmoothingParam(aa)] = SmoothSplineCrossVal(allSeparations{aa}(:),allThresholds{aa}(:),'smoothingParam',initialSmoothingParam);
 end
 
 %% Read in ideal observer threshold contour and scale to data
@@ -136,21 +137,22 @@ for aa = 1:length(anglesToAnalyze)
     % Smooth spline through the computational points
     smoothingParameter = 0.94;
     compFitObj = fit(compSeparations'*minPerPixel,compObserverSepDataScaled(aa,:)','smoothingspline','SmoothingParam',smoothingParameter);
-    splinePredictions = feval(compFitObj,sepSmoothPoints);
+    splinePredictions = feval(compFitObj,sepSmoothPoints*minPerPixel);
 
     % Set up subplot
+    figure(theDataFig);
     subplot(1,length(anglesToAnalyze),aa); hold on;
 
     % Plot comp observer fit
     if (PLOT_COMP)
         plot(compSeparations*minPerPixel,compObserverSepDataScaled(aa,:),'r*','MarkerSize',6);
-        plot(sepSmoothPoints,splinePredictions,'r','LineWidth',3);
+        plot(sepSmoothPoints*minPerPixel,splinePredictions,'r','LineWidth',3);
     end
 
     % Add data spline too
     dataPrediction{aa} = feval(dataFitObj{aa},sepSmoothPoints);
     if (PLOT_SPLINE)
-        plot(sepSmoothPoints,dataPrediction{aa},'g','LineWidth',3);
+        plot(sepSmoothPoints*minPerPixel,dataPrediction{aa},'g','LineWidth',3);
     end
 end
 

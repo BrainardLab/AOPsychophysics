@@ -40,7 +40,7 @@ degsPerPixel = 1/415;
 minPerPixel = 60*degsPerPixel;
 
 % Other params
-PLOT_COMP = false;
+PLOT_COMP = true;
 PLOT_SPLINE = true;
 theLim = 3;
 
