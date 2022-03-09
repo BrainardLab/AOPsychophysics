@@ -7,6 +7,14 @@
 %    To focus on effect of separation, this combines across up-down/down-up
 %    pairs.
 
+%% Set defaults
+if (~exist('PLOT_COMP','var'))
+    PLOT_COMP = false;
+end
+if (~exist('PLOT_SPLINE','var'))
+    PLOT_SPLINE = false;
+end
+
 %% Do the preprocessing
 CombinePreprocess;
 
@@ -35,12 +43,14 @@ for aa = 1:length(anglesToAnalyze)
     end
 
     % Find all data for this angle, and plot versus separation
+    allSeparations{aa} = [];
+    allThresholds{aa} = [];
     for uu = 1:length(uniqueSessions)
         index = find( (sessionNumbersFit == uniqueSessions(uu)) & (ReflectAnglesAround45(stimAnglesFit) == anglesToAnalyze(aa)));
-        theThresholdsToPlot = vecnorm(theDataFit(:,index));
         separationsToPlot = separationsFit(index);
+        thresholdsToPlot = vecnorm(theDataFit(:,index));
         if (~exist('PLOT_DATA','var') | PLOT_DATA)
-            plot(separationsToPlot*minPerPixel,theThresholdsToPlot,[theColors(theColor) 'o'],'MarkerFaceColor',theColors(theColor),'MarkerSize',6);
+            plot(separationsToPlot*minPerPixel,thresholdsToPlot,[theColors(theColor) 'o'],'MarkerFaceColor',theColors(theColor),'MarkerSize',6);
         end
 
         % Cycle through colors
@@ -48,6 +58,10 @@ for aa = 1:length(anglesToAnalyze)
         if (theColor > length(theColors))
             theColor = 1;
         end
+
+        % Accumulate so we can fit a smooth spline through the data
+        allSeparations{aa} = [allSeparations{aa} separationsToPlot];
+        allThresholds{aa} = [allThresholds{aa} thresholdsToPlot];
     end
 
     % Plot tidy
@@ -57,9 +71,11 @@ for aa = 1:length(anglesToAnalyze)
         theSubject,computationalName,num2str(round(1000*defocusDiopters)),pupilDiam)) , ...
         ; sprintf('Angle: %d',anglesToAnalyze(aa)) };
     title(titleStr);
+
+    % Fit smooth spline through data
+    dataSmoothingParam(aa) = 0.999;
+    dataFitObj{aa} = fit(allSeparations{aa}',allThresholds{aa}','smoothingspline','smoothingparam',dataSmoothingParam(aa));
 end
-
-
 
 %% Read in ideal observer threshold contour and scale to data
 for ss = 1:length(compSeparations)
@@ -119,13 +135,23 @@ sepSmoothPoints = linspace(min(compSeparations),max(compSeparations),100);
 for aa = 1:length(anglesToAnalyze)
     % Smooth spline through the computational points
     smoothingParameter = 0.94;
-    fSpline = fit(compSeparations'*minPerPixel,compObserverSepDataScaled(aa,:)','smoothingspline','SmoothingParam',smoothingParameter);
-    splinePredictions = feval(fSpline,sepSmoothPoints);
+    compFitObj = fit(compSeparations'*minPerPixel,compObserverSepDataScaled(aa,:)','smoothingspline','SmoothingParam',smoothingParameter);
+    splinePredictions = feval(compFitObj,sepSmoothPoints);
 
     % Set up subplot
     subplot(1,length(anglesToAnalyze),aa); hold on;
-    plot(compSeparations*minPerPixel,compObserverSepDataScaled(aa,:),'r*','MarkerSize',6);
-    plot(sepSmoothPoints,splinePredictions,'r','LineWidth',3);
+
+    % Plot comp observer fit
+    if (PLOT_COMP)
+        plot(compSeparations*minPerPixel,compObserverSepDataScaled(aa,:),'r*','MarkerSize',6);
+        plot(sepSmoothPoints,splinePredictions,'r','LineWidth',3);
+    end
+
+    % Add data spline too
+    dataPrediction{aa} = feval(dataFitObj{aa},sepSmoothPoints);
+    if (PLOT_SPLINE)
+        plot(sepSmoothPoints,dataPrediction{aa},'g','LineWidth',3);
+    end
 end
 
 %% Save figure
@@ -134,6 +160,6 @@ outputPath = fullfile(psychoBaseDir,outDirname);
 if (~exist(outputPath,'dir'))
     mkdir(outputPath);
 end
-outputFilename = sprintf('%s_%s_D%s_P%d_Ellipse.tiff', ...
+outputFilename = sprintf('%s_%s_D%s_P%d_Sep.tiff', ...
     theSubject,computationalName,num2str(round(1000*defocusDiopters)),pupilDiam);
 print(theDataFig, fullfile(outputPath,outputFilename), '-dtiff');

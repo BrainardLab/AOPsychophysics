@@ -40,7 +40,7 @@ degsPerPixel = 1/415;
 minPerPixel = 60*degsPerPixel;
 
 % Other params
-theLim = 3;
+theLim = 6;
 
 % Specify conditions, etc.
 DataSpec_PreReg_7by9_11002;
