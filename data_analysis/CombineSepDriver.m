@@ -74,12 +74,14 @@ for aa = 1:length(anglesToAnalyze)
     title(titleStr);
 
     % Fit smooth spline through data
-    initialSmoothingParam = 0.9;
-    [dataFitObj{aa},dataSmoothingParam(aa)] = SmoothSplineCrossVal(allSeparations{aa}(:),allThresholds{aa}(:), ...
-        'smoothingParamLow',smoothingParamsLow(aa),'smoothingParamHigh',smoothingParamsHigh(aa), ...
-        'nSmoothingParams',nSmoothingParams,'nPartitions',nPartitions,'trainFraction',trainFraction, ...
-        'plot',true);
-    fprintf('Smoothing parameter for data set %d, %0.3e\n',aa,dataSmoothingParam(aa));
+    if (PLOT_SPLINE)
+        initialSmoothingParam = 0.9;
+        [dataFitObj{aa},dataSmoothingParam(aa)] = SmoothSplineCrossVal(allSeparations{aa}(:),allThresholds{aa}(:), ...
+            'smoothingParamLow',smoothingParamsLow(aa),'smoothingParamHigh',smoothingParamsHigh(aa), ...
+            'nSmoothingParams',nSmoothingParams,'nPartitions',nPartitions,'trainFraction',trainFraction, ...
+            'plot',true);
+        fprintf('Smoothing parameter for data set %d, %0.3e\n',aa,dataSmoothingParam(aa));
+    end
 end
 
 %% Read in ideal observer threshold contour and scale to data
@@ -155,8 +157,8 @@ for aa = 1:length(anglesToAnalyze)
     end
 
     % Add data spline too
-    dataPrediction{aa} = feval(dataFitObj{aa},sepSmoothPoints);
     if (PLOT_SPLINE)
+        dataPrediction{aa} = feval(dataFitObj{aa},sepSmoothPoints);
         plot(sepSmoothPoints*minPerPixel,dataPrediction{aa},'g','LineWidth',3);
     end
 end
@@ -167,6 +169,6 @@ outputPath = fullfile(psychoBaseDir,outDirname);
 if (~exist(outputPath,'dir'))
     mkdir(outputPath);
 end
-outputFilename = sprintf('%s_%s_D%s_P%d_Sep.tiff', ...
-    theSubject,computationalName,num2str(round(1000*defocusDiopters)),pupilDiam);
+outputFilename = sprintf('%s_%s_D%s_P%d_Sep_%d_%d.tiff', ...
+    theSubject,computationalName,num2str(round(1000*defocusDiopters)),pupilDiam,PLOT_COMP,PLOT_SPLINE);
 print(theDataFig, fullfile(outputPath,outputFilename), '-dtiff');

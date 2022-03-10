@@ -45,10 +45,11 @@ PLOT_SPLINE = true;
 theLim = 3;
 
 % Splining params
-smoothingParamsLow = [0 0 0];
-smoothingParamsHigh = [0.002 0.05 0.000005];
-nSmoothingParams = 50;
-nPartitions = 40;
+splineVal = 0.001;
+smoothingParamsLow = [splineVal splineVal splineVal];
+smoothingParamsHigh = [splineVal splineVal splineVal];
+nSmoothingParams = 1;
+nPartitions = 1;
 trainFraction = 0.9;
 
 % Specify conditions, etc.
