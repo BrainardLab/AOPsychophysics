@@ -3,8 +3,12 @@ function [fitObj,smoothingParam] = SmoothSplineCrossVal(xVals,yVals,options)
 arguments
     xVals
     yVals
-    options.smoothingParam (1,1) = 0.9
-    options.plot (1,1) = true;
+    options.smoothingParamLow (1,1) = 0
+    options.smoothingParamHigh (1,1) = 1
+    options.nSmoothingParams (1,1) = 10
+    options.nPartitions (1,1) = 10
+    options.trainFraction (1,1) = 0.9
+    options.plot (1,1) = true
 end
 
 % Get unique x values and sort
@@ -12,8 +16,8 @@ uniqueX = unique(xVals);
 xUse = sort(uniqueX(:));
 
 % Set up cross validation partitions
-nPartitions = 10;
-trainFraction = 0.9;
+nPartitions = options.nPartitions;
+trainFraction = options.trainFraction;
 trainN = floor(trainFraction*length(xVals));
 for pp = 1:nPartitions
     trainRaw = Shuffle(1:length(xVals));
@@ -26,17 +30,11 @@ for pp = 1:nPartitions
     yUseTest{pp} = yVals(testIndex);
 end
 
-
-% for uu = 1:length(xUse)
-%     index = find(xVals == xUse(uu));
-%     yUse(uu) = mean(yVals(index));
-% end
-
-minSmooth = 0; 
-maxSmooth = 0.05;
-nSmooth = 100;
+% Try out a bunch of smoothing parameters and cross validate
+minSmooth = options.smoothingParamLow; 
+maxSmooth = options.smoothingParamHigh;
+nSmooth = options.nSmoothingParams;
 smoothingParams = linspace(minSmooth,maxSmooth,nSmooth);
-
 for ss = 1:nSmooth
     errSmooth(ss) = 0;
     for pp = 1:nPartitions
@@ -48,7 +46,8 @@ for ss = 1:nSmooth
 end
 
 % Set smoothing parameter and fit
-smoothingParam = 0.001;
+[~,whichSmooth] = min(errSmooth);
+smoothingParam = smoothingParams(whichSmooth);
 fitObj = fit(xVals,yVals,'smoothingspline','smoothingparam',smoothingParam);
 
 if (options.plot)

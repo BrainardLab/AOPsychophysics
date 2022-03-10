@@ -40,9 +40,16 @@ degsPerPixel = 1/415;
 minPerPixel = 60*degsPerPixel;
 
 % Other params
-PLOT_COMP = true;
+PLOT_COMP = false;
 PLOT_SPLINE = true;
 theLim = 3;
+
+% Splining params
+smoothingParamsLow = [0 0 0];
+smoothingParamsHigh = [0.002 0.05 0.000005];
+nSmoothingParams = 50;
+nPartitions = 40;
+trainFraction = 0.9;
 
 % Specify conditions, etc.
 DataSpec_PreReg_7by9_11046;

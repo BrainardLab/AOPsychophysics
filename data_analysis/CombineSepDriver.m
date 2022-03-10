@@ -75,7 +75,11 @@ for aa = 1:length(anglesToAnalyze)
 
     % Fit smooth spline through data
     initialSmoothingParam = 0.9;
-    [dataFitObj{aa},ataSmoothingParam(aa)] = SmoothSplineCrossVal(allSeparations{aa}(:),allThresholds{aa}(:),'smoothingParam',initialSmoothingParam);
+    [dataFitObj{aa},dataSmoothingParam(aa)] = SmoothSplineCrossVal(allSeparations{aa}(:),allThresholds{aa}(:), ...
+        'smoothingParamLow',smoothingParamsLow(aa),'smoothingParamHigh',smoothingParamsHigh(aa), ...
+        'nSmoothingParams',nSmoothingParams,'nPartitions',nPartitions,'trainFraction',trainFraction, ...
+        'plot',true);
+    fprintf('Smoothing parameter for data set %d, %0.3e\n',aa,dataSmoothingParam(aa));
 end
 
 %% Read in ideal observer threshold contour and scale to data
@@ -136,7 +140,8 @@ sepSmoothPoints = linspace(min(compSeparations),max(compSeparations),100);
 for aa = 1:length(anglesToAnalyze)
     % Smooth spline through the computational points
     smoothingParameter = 0.94;
-    compFitObj = fit(compSeparations'*minPerPixel,compObserverSepDataScaled(aa,:)','smoothingspline','SmoothingParam',smoothingParameter);
+    compFitObj = fit(compSeparations'*minPerPixel,compObserverSepDataScaled(aa,:)', ...
+        'smoothingspline','SmoothingParam',smoothingParameter);
     splinePredictions = feval(compFitObj,sepSmoothPoints*minPerPixel);
 
     % Set up subplot
