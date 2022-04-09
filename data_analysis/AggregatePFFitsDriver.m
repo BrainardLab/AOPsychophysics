@@ -88,7 +88,7 @@ for ii = 1:length(theFiles)
             end
             if (theData{ii}.sessionData{ss}.angle ~= stimAngleCheck(ii) & ...
                 ReflectAnglesAround45(theData{ii}.sessionData{ss}.angle) ~= stimAngleCheck(ii))
-                error('Stim separation check failure');
+                error('Stim angle check failure');
             end
         end
 
