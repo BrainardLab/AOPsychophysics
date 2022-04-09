@@ -165,9 +165,15 @@ for ss = 1:length(uniqueSessions)
     for aa = 1:length(initialAlphas)
         for bb = 1:length(initialBetas)
             initialParams(1) = initialAlphas(aa);
-            initialParams(2) = initialBetas(bb);
-            [paramsFittedAggregate_Temp{idx} LL(idx)] = PAL_PFML_FitMultiple(log10(stimLevels_Fit), numPosFit_All(sessionIndex,:), outOfNum_All(sessionIndex,:), initialParams, PF, 'slopes', 'constrained', 'guessrates', ...
+            if (fixedBeta(ss))
+                initialParams(2) = fixedBetaValue(ss);
+                [paramsFittedAggregate_Temp{idx} LL(idx)] = PAL_PFML_FitMultiple(log10(stimLevels_Fit), numPosFit_All(sessionIndex,:), outOfNum_All(sessionIndex,:), initialParams, PF, 'slopes', 'fixed', 'guessrates', ...
                 'fixed', 'lapserates', 'constrained', 'lapselimits', [0 0.05]);
+            else
+                initialParams(2) = initialBetas(bb);
+                [paramsFittedAggregate_Temp{idx} LL(idx)] = PAL_PFML_FitMultiple(log10(stimLevels_Fit), numPosFit_All(sessionIndex,:), outOfNum_All(sessionIndex,:), initialParams, PF, 'slopes', 'constrained', 'guessrates', ...
+                    'fixed', 'lapserates', 'constrained', 'lapselimits', [0 0.05]);
+            end
             idx = idx+1;
         end
     end

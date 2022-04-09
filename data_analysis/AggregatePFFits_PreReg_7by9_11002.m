@@ -31,6 +31,8 @@ theIndicator = 'incDecFits';
 initialParams = [];
 initialAlphas = [];
 initialBetas = [5 7 10 12 15 20];
+fixedBeta = [false true];
+fixedBetaValue = [0 6.75];
 
 %% Specify PF input
 %
